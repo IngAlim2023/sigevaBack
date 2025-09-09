@@ -1,14 +1,15 @@
-
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 
-export default class Perfil extends BaseModel {
+export default class Grupo extends BaseModel {
   @column({ isPrimary: true })
-  declare idperfil: number
+  declare idgrupo: number
 
   @column()
-  declare perfil: string
+  declare grupo: string
 
+  @column()
+  declare jornada: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
