@@ -12,3 +12,4 @@ import router from '@adonisjs/core/services/router'
 const aprendizcontroller = new AprendizsController()
 router.post('/aprendiz', [AprendizsController, 'registro'])
 router.get('/aprendiz', [AprendizsController, 'traer'])
+
