@@ -1,6 +1,7 @@
-import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import type  { HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import Municipio from './municipio.js'
-import type  { HasMany } from '@adonisjs/lucid/types/relations'
+import Regionale from './regionale.js'
 
 export default class Departamento extends BaseModel {
   @column({ isPrimary: true })
@@ -8,9 +9,13 @@ export default class Departamento extends BaseModel {
 
   @column()
   declare departamentos: string
-
+  
   @hasMany(() => Municipio, {
-    foreignKey: 'iddepartamentos',
+  foreignKey: 'iddepartamentos',
   })
-  declare departamento: HasMany<typeof Municipio>
+  declare relac: HasMany<typeof Municipio>
+
+  @hasOne(() => Regionale)
+  declare profile: HasOne<typeof Regionale>
 }
+
