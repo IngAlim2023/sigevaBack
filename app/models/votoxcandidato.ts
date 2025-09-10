@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 export default class Votoxcandidato extends BaseModel {
+  public static table = 'votoxcandidato'
   @column({ isPrimary: true })
   declare idvotoxcandidato: number
 
@@ -9,8 +11,11 @@ export default class Votoxcandidato extends BaseModel {
   declare idcandidatos: number
 
   @column()
-  declare idAprendiz: number
-  
+  declare idaprendiz: number
+
   @column()
   declare contador: number
+
+  @belongsTo(() => , {foreignKey: 'iddepartamentos',})
+  declare municipio: BelongsTo<typeof Departamento>
 }
