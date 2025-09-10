@@ -15,15 +15,15 @@ export default class ValidarVotoAnual {
 
     // 2. Consulta con preload → traemos elecciones de sus votos
     const voticos = await Votoxcandidato
-      .query()
-      .where('idaprendiz', idAprendiz)
-      .preload('votos', (candidatoQuery) => {
-        candidatoQuery.preload('eleccion')
-      })
+        .query()
+        .where('idaprendiz', idAprendiz)
+        .preload('candidato', (candidatoQuery) => {
+            candidatoQuery.preload('eleccion')
+     })
 
     // 3. Extraemos años en los que ya votó
     const añosVotados = voticos.map((v) => {
-      return v.votos.eleccion.fecha_fin.getFullYear()
+      return v.candidato.eleccion.fecha_fin.getFullYear()
     })
 
     // 4. Año actual

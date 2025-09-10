@@ -2,15 +2,27 @@
 
 import Aprendiz from '#models/aprendiz'
 import { HttpContext } from '@adonisjs/core/http'
+import Grupo from '#models/grupo'
+import ProgramaFormacion from '#models/programa_formacion'
+import NivelFormacion from '#models/nivel_formacion'
+import db from '@adonisjs/lucid/services/db'
+import Perfil from '#models/perfil'
 //contraseña
 import bcrypt from 'bcrypt'
 export default class AprendizsController {
   async registro({ request, response }: HttpContext) {
+    const trx = await db.transaction()
+
     try {
       const data = request.only([
-        'idgrupo',
-
-        'idprograma_formacion',
+        'grupo',
+        'jornada',
+        'programa',
+        'codigo_programa',
+        'version',
+        'duracion',
+        'idnivel_formacion',
+        'idarea_tematica',
         'perfil_idperfil',
         'nombres',
         'apellidos',
@@ -20,21 +32,94 @@ export default class AprendizsController {
         'numero_documento',
         'email',
         'password',
+        'nivel_formacion',
       ])
+      const perfil = await Perfil.findBy('perfil', 'Aprendiz')
+
+      // Verificar si el email ya existe
       const emailExist = await Aprendiz.findBy('email', data.email)
       if (emailExist) {
+        await trx.rollback()
         return response.status(400).json({
-          message: 'El correo ya está registrado, por favor usa otro',
+          message: 'El correo ya está registrado',
         })
       }
-      // Hashear la contraseña con bcrypt
-      data.password = await bcrypt.hash(data.password, 10)
-      const aprendiz = await Aprendiz.create(data)
+
+      // Buscar o crear grupo
+      let grupo = await Grupo.query({ client: trx }).where('grupo', data.grupo).first()
+      if (!grupo) {
+        grupo = await Grupo.create({ grupo: data.grupo, jornada: data.jornada }, { client: trx })
+      }
+
+      // Buscar o crear nivel
+      let nivel = await NivelFormacion.query({ client: trx })
+        .where('idnivel_formacion', data.idnivel_formacion)
+        .first()
+
+      if (!nivel) {
+        nivel = await NivelFormacion.create(
+          {
+            idnivel_formacion: data.idnivel_formacion,
+            nivel_formacion: data.nivel_formacion,
+          },
+          { client: trx }
+        )
+      }
+
+      // Buscar o crear programa
+      let programa = await ProgramaFormacion.query({ client: trx })
+        .where('codigo_programa', data.codigo_programa)
+        .first()
+
+      if (!programa) {
+        programa = await ProgramaFormacion.create(
+          {
+            programa: data.programa,
+            codigo_programa: data.codigo_programa,
+            version: data.version,
+            duracion: data.duracion,
+            idnivel_formacion: nivel.idnivel_formacion,
+            idarea_tematica: data.idarea_tematica,
+          },
+          { client: trx }
+        )
+      }
+
+      // Hashear contraseña
+      const hashedPassword = await bcrypt.hash(data.password, 10)
+      let perfilaprendiz = await Perfil.query({ client: trx }).where('perfil', 'aprendiz').first()
+      if (!perfilaprendiz) {
+        perfilaprendiz = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
+      }
+
+      // Crear aprendiz solo con sus campos
+      const aprendiz = await Aprendiz.create(
+        {
+          perfil_idperfil: perfilaprendiz.idperfil,
+
+          nombres: data.nombres,
+          apellidos: data.apellidos,
+          celular: data.celular,
+          estado: data.estado,
+          tipo_documento: data.tipo_documento,
+          numero_documento: data.numero_documento,
+          email: data.email,
+          password: hashedPassword,
+          idgrupo: grupo.idgrupo,
+          idprograma_formacion: programa.idprograma_formacion,
+        },
+        { client: trx }
+      )
+
+      await trx.commit()
+
       return response.created({
-        message: 'Aprendiz creado con exito',
+        message: 'Aprendiz creado con éxito',
         data: aprendiz,
       })
     } catch (error) {
+      await trx.rollback()
+      console.error(error)
       return response.status(500).json({
         message: 'Error al registrar aprendiz',
         error: error.message,
@@ -136,7 +221,7 @@ export default class AprendizsController {
     try {
       const { email, password } = request.only(['email', 'password'])
 
-      const aprendizExist = await Aprendiz.findBy('email', email)
+      const aprendizExist = await Aprendiz.query().where('email', email).preload('perfil').first()
 
       if (!aprendizExist) return response.status(401).json({ message: 'Fallo en la autenticación' })
 
@@ -145,7 +230,16 @@ export default class AprendizsController {
       if (!verifyPassword)
         return response.status(401).json({ message: 'Fallo en la autenticación' })
 
-      return response.status(200).json({ message: 'Autenticado' })
+      return response.status(200).json({
+        message: 'Autenticado',
+        data: {
+          id: aprendizExist.idaprendiz,
+          nombre: aprendizExist.nombres,
+          apellidos: aprendizExist.apellidos,
+          estado: aprendizExist.estado,
+          perfil: aprendizExist.perfil.perfil, // <-- accedes al nombre del perfil
+        },
+      })
     } catch (e) {
       return response.status(500).json({ message: 'Error', error: e.message })
     }

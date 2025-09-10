@@ -24,24 +24,4 @@ export default class VotoxcandidatoController {
         }
     }
 
-    public async getYears({ response }: HttpContext) {
-  try {
-    const idAprendiz = 3 
-
-    const voticos = await Votoxcandidato
-      .query()
-      .where('idaprendiz', idAprendiz) 
-      .preload('votos', (candidatoQuery) => {
-        candidatoQuery.preload('eleccion')
-      })
-
-    return response.ok(voticos)
-  } catch (error) {
-    console.error(error)
-    return response.internalServerError({
-      message: 'Error al traer votos',
-      error: error.message,
-    })
-  }
-}
 }
