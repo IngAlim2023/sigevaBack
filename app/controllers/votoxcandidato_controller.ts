@@ -25,17 +25,23 @@ export default class VotoxcandidatoController {
     }
 
     public async getYears({ response }: HttpContext) {
-    try {
-      const voticos = await Votoxcandidato
-        .query()
-        .join('candidatos', 'votoxcandidato.idcandidatos', 'candidatos.idcandidatos')
-        .join('elecciones', 'candidatos.ideleccion', 'elecciones.ideleccion')
-        .select('votoxcandidato.*', 'elecciones.fecha_fin')
+  try {
+    const idAprendiz = 3 
 
-return response.ok(voticos)
-    } catch (error) {
-      console.error(error)
-      return response.internalServerError({ message: 'Error al traer votos', error: error.message })
-    }
+    const voticos = await Votoxcandidato
+      .query()
+      .where('idaprendiz', idAprendiz) 
+      .preload('votos', (candidatoQuery) => {
+        candidatoQuery.preload('eleccion')
+      })
+
+    return response.ok(voticos)
+  } catch (error) {
+    console.error(error)
+    return response.internalServerError({
+      message: 'Error al traer votos',
+      error: error.message,
+    })
   }
+}
 }

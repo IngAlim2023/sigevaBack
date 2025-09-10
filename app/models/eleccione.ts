@@ -1,9 +1,10 @@
 /* eslint-disable prettier/prettier */
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel,  column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+
 export default class Eleccione extends BaseModel {
-  @column({ isPrimary: true })
+  @column({ isPrimary: true, columnName: 'ideleccion'  })
   declare idEleccion: number
 
   @column()
@@ -21,6 +22,6 @@ export default class Eleccione extends BaseModel {
   @column()
   declare hora_fin: DateTime
 
-  @belongsTo(() => Eleccione, { foreignKey: 'idCentro_formacion' })
+
 
 }

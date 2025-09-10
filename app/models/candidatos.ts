@@ -1,4 +1,7 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany, belongsTo} from '@adonisjs/lucid/orm'
+import Votoxcandidato from './votoxcandidato.js'
+import type { HasMany, BelongsTo } from '@adonisjs/lucid/types/relations'
+import Eleccione from './eleccione.js'
 
 export default class Candidatos extends BaseModel {
   public static table = 'candidatos'

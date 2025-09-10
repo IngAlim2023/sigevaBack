@@ -1,35 +1,42 @@
-// // app/Middleware/ValidarVotoAnual.ts
-// import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-// import Aprendiz from '#models/aprendiz'
+// app/Middleware/ValidarVotoAnual.ts
+import { HttpContext } from '@adonisjs/core/http'
+import Votoxcandidato from '#models/votoxcandidato'
 
-// export default class ValidarVotoAnual {
-//   public async handle({ auth, response }: HttpContextContract, next: () => Promise<void>) {
-//     const aprendizId = auth.user?.idAprendiz
-//     if (!aprendizId) {
-//       return response.unauthorized({ message: 'No autenticado' })
-//     }
+export default class ValidarVotoAnual {
+  public async handle({ request, response }: HttpContext, next: () => Promise<void>) {
+    // 1. Sacamos el idAprendiz del body del POST
+    const idAprendiz = request.input('idaprendiz')
 
-//     // Traemos el aprendiz con sus votos (preload)
-//     const aprendiz = await Aprendiz.query()
-//       .where('idAprendiz', aprendizId)
-//       .preload('votosXCandidato')
-//       .firstOrFail()
+    if (!idAprendiz) {
+      return response.badRequest({
+        message: 'Debes enviar el idaprendiz en la petición',
+      })
+    }
 
-//     // Año actual del voto que intenta registrar
-//     const añoVotoNuevo = new Date().getFullYear()
+    // 2. Consulta con preload → traemos elecciones de sus votos
+    const voticos = await Votoxcandidato
+      .query()
+      .where('idaprendiz', idAprendiz)
+      .preload('votos', (candidatoQuery) => {
+        candidatoQuery.preload('eleccion')
+      })
 
-//     // Revisar si ya votó en este mismo año
-//     const yaVotoEsteAño = aprendiz.votosXCandidato.some((v) => {
-//       return v.createdAt.year() === añoVotoNuevo
-//     })
+    // 3. Extraemos años en los que ya votó
+    const añosVotados = voticos.map((v) => {
+      return v.votos.eleccion.fecha_fin.getFullYear()
+    })
 
-//     if (yaVotoEsteAño) {
-//       return response.badRequest({
-//         message: `Ya realizaste un voto en el año ${añoVotoNuevo}`,
-//       })
-//     }
+    // 4. Año actual
+    const añoActual = new Date().getFullYear()
 
-//     // Si no ha votado este año, continuamos
-//     await next()
-//   }
-// }
+    // 5. Validación
+    if (añosVotados.includes(añoActual)) {
+      return response.badRequest({
+        message: `Ya realizaste un voto en el año ${añoActual}`,
+      })
+    }
+
+    // 6. Si pasa la validación, continúa al controlador
+    await next()
+  }
+}
