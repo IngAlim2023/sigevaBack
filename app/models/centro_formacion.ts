@@ -4,16 +4,16 @@ import Usuario from './usuario.js'
 
 export default class CentroFormacion extends BaseModel {
   @column({ isPrimary: true })
-  declare idCentro_formacion: number
+  declare idcentro_formacion: number
 
   @column()
-  declare idregional?: number
+  declare idregional: number
 
   @column()
   declare centro_formacioncol: string
 
   @column()
-  declare idmunicipios?: number
+  declare idmunicipios: number
 
   @column()
   declare direccion: string
@@ -31,7 +31,7 @@ export default class CentroFormacion extends BaseModel {
   declare correosubdirector: string
 
   @hasMany(() => Usuario, {
-    foreignKey: 'idCentro_formacion',
+    foreignKey: 'idcentro_formacion',
   })
   declare usuarios: HasMany<typeof Usuario>
 }
