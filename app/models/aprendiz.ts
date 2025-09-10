@@ -62,7 +62,7 @@ export default class Aprendiz extends BaseModel {
   @hasMany(() => Candidatos, {
     foreignKey: 'idAprendiz',
   })
-  declare departamento: HasMany<typeof Candidatos>
+  declare candidatos: HasMany<typeof Candidatos>
 
   @hasMany(() => Votoxcandidato, {
     foreignKey: 'idAprendiz',

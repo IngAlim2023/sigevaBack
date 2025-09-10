@@ -16,7 +16,7 @@ export default class Candidatos extends BaseModel {
   declare ideleccion: number
 
   @column()
-  declare idparendiz: number
+  declare idaprendiz: number
 
   @column()
   declare foto: string
@@ -27,27 +27,20 @@ export default class Candidatos extends BaseModel {
   @column()
   declare numero_tarjeton: number
 
-  @column()
-    declare idEleccion: number
   
   @belongsTo(() => Eleccione, {
-  foreignKey: 'idEleccion',
+  foreignKey: 'ideleccion',
    })
-  
-   declare eleccion: BelongsTo<typeof Eleccione>
-
-   @column()
-    declare idaprendiz: number
+  declare eleccion: BelongsTo<typeof Eleccione>
   
   @belongsTo(() => Aprendiz, {
   foreignKey: 'idaprendiz',
    })
-  
-   declare aprendiz: BelongsTo<typeof Aprendiz>
+  declare aprendiz: BelongsTo<typeof Aprendiz>
 
   @hasMany(() => Votoxcandidato, {
   foreignKey: 'idcandidatos',
   })
   
-  declare departamento: HasMany<typeof Votoxcandidato>
+  declare candidatos: HasMany<typeof Votoxcandidato>
 }
