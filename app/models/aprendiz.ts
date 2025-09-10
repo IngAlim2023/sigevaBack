@@ -1,8 +1,10 @@
-import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import ProgramaFormacion from './programa_formacion.js'
 import Perfil from './perfil.js'
 import Grupo from './grupo.js'
+import Candidatos from './candidatos.js'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import Votoxcandidato from './votoxcandidato.js'
 
 export default class Aprendiz extends BaseModel {
   public static table = 'aprendiz'
@@ -13,10 +15,9 @@ export default class Aprendiz extends BaseModel {
   declare idgrupo: number
 
   @column()
-  declare idprograma_formacion: number
-
-  @column()
   declare perfil_idperfil: number
+  @column()
+  declare idprograma_formacion: number
 
   @column()
   declare nombres: string
@@ -49,7 +50,7 @@ export default class Aprendiz extends BaseModel {
   declare grupo: any
 
   @belongsTo(() => ProgramaFormacion, {
-    foreignKey: 'idPrograma_formacion',
+    foreignKey: 'idprograma_formacion',
   })
   declare programa: any
 
@@ -57,4 +58,14 @@ export default class Aprendiz extends BaseModel {
     foreignKey: 'perfil_idperfil',
   })
   declare perfil: any
+
+  @hasMany(() => Candidatos, {
+    foreignKey: 'idAprendiz',
+  })
+  declare departamento: HasMany<typeof Candidatos>
+
+  @hasMany(() => Votoxcandidato, {
+    foreignKey: 'idAprendiz',
+  })
+  declare voto: HasMany<typeof Votoxcandidato>
 }

@@ -15,5 +15,7 @@ router
 
     // Actualizar contraseña por correo
     router.put('/contrasena', 'AprendizsController.actualizarContrasena')
+
+    router.post('/aprendices/importar', 'ImportExcelController.importarAprendices')
   })
   .prefix('/aprendiz') // Esto hace que todas las rutas tengan /aprendiz al inicio por si las moscas
