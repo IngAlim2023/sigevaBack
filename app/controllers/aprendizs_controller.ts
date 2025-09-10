@@ -2,7 +2,7 @@
 
 import Aprendiz from '#models/aprendiz'
 import { HttpContext } from '@adonisjs/core/http'
-
+//contraseña
 import bcrypt from 'bcrypt'
 export default class AprendizsController {
   async registro({ request, response }: HttpContext) {
