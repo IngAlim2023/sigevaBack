@@ -1,7 +1,7 @@
-import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
-import type  { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { BaseModel,  belongsTo,  column, hasMany} from '@adonisjs/lucid/orm'
+import  type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Departamento from './departamento.js'
+import CentroFormacion from './centro_formacion.js'
 
 export default class Municipio extends BaseModel {
   @column({ isPrimary: true })
@@ -10,18 +10,22 @@ export default class Municipio extends BaseModel {
   @column()
   declare municipios: string
 
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  @column()
+  declare iddepartamentos: number
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  @belongsTo(() => Departamento, {
+  foreignKey: 'iddepartamentos',
+  })
+  declare centro: BelongsTo<typeof Departamento>
 
-    @column()
-    declare iddepartamento: number
-  
-    @belongsTo(() => Departamento, {
-      foreignKey: 'iddepartamentos',
-    })
-    declare municipio: BelongsTo<typeof Departamento>
+  @hasMany(() => CentroFormacion, {
+  foreignKey: 'idcentro_formacion',
+  })
+  declare departamento: HasMany<typeof CentroFormacion>
+
+  @hasMany(() => CentroFormacion, {
+  foreignKey: 'idmunicipios',
+  })
+  declare municipio: HasMany<typeof CentroFormacion>
   
 }

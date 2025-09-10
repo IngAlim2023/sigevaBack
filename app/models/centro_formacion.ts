@@ -1,19 +1,16 @@
-import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
-import type  { HasMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import type  { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import Regionale from './regionale.js'
+import Municipio from './municipio.js'
+import Eleccione from './eleccione.js'
 import Usuario from './usuario.js'
 
 export default class CentroFormacion extends BaseModel {
   @column({ isPrimary: true })
-  declare idCentro_formacion: number
-
-  @column()
-  declare idregional?: number
+  declare idcentro_formacion: number
 
   @column()
   declare centro_formacioncol: string
-
-  @column()
-  declare idmunicipios?: number
 
   @column()
   declare direccion: string
@@ -30,8 +27,32 @@ export default class CentroFormacion extends BaseModel {
   @column()
   declare correosubdirector: string
 
-  @hasMany(() => Usuario, {
-    foreignKey: 'idCentro_formacion',
+  @column()
+  declare idRegionales: number
+
+  @belongsTo(() => Regionale,{
+    foreignKey: 'idRegionales'
   })
-  declare usuarios: HasMany<typeof Usuario>
-}
+  declare regional: BelongsTo<typeof Regionale>
+
+  @column()
+  declare idmunicipios:number
+
+  @belongsTo(() => Municipio, {
+    foreignKey: 'idmunicipios'
+  })
+  declare municipio: BelongsTo<typeof Municipio>
+
+  @hasMany(() => Eleccione, {
+  foreignKey: 'idcentro_formacion',
+  })
+  
+  declare elecciones: HasMany<typeof Eleccione>
+
+  @hasMany(() => Usuario, {
+  foreignKey: 'idcentro_formacion',
+  })
+
+  declare usuario: HasMany<typeof Usuario>
+  }
+
