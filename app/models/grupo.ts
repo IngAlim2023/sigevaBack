@@ -13,11 +13,7 @@ export default class Grupo extends BaseModel {
   @column()
   declare jornada: string
 
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+ 
 
   @hasMany(() => Aprendiz, {
     foreignKey: 'idgrupo',
