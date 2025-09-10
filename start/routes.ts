@@ -15,5 +15,4 @@ router.get('/aprendiz', [AprendizsController, 'traer'])
 
 router.post('/login/aprendiz', [AprendizsController, 'login']) */
 
-
 router.post('/login/aprendiz', [AprendizsController, 'login'])
