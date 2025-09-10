@@ -12,12 +12,6 @@ export default class Perfil extends BaseModel {
   @column()
   declare perfil: string
 
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
-
   @hasMany(() => Usuario, {
     foreignKey: 'idperfil',
   })
