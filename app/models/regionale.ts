@@ -1,12 +1,12 @@
-import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 
 export default class Regionale extends BaseModel {
+  public static table='regional'
   @column({ isPrimary: true })
-  declare idRegionales: number
+  declare idregional: number
 
-  @column()
-  declare idDepartamento: string
+  @column({columnName:'departamentos_iddepartamentos'})
+  declare departamentos_iddepartamentos: string
 
   @column()
   declare regional: string
@@ -17,14 +17,7 @@ export default class Regionale extends BaseModel {
   @column()
   declare direccion: string
 
-  @column()
+  @column({columnName:'numero_centros'})
   declare numero_centros: number
-
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
-
 
 }
