@@ -24,7 +24,7 @@ export default class Usuario extends BaseModel {
     foreignKey: 'idperfil',
   })
 
-   declare perfil: BelongsTo<typeof Perfil>
+  declare perfil: BelongsTo<typeof Perfil>
   
   @column()
   declare idcentro_formacion: number
