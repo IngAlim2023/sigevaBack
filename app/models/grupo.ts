@@ -12,6 +12,7 @@ export default class Grupo extends BaseModel {
 
   @column()
   declare jornada: string
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -22,5 +23,4 @@ export default class Grupo extends BaseModel {
     foreignKey: 'idgrupo',
   })
   declare departamento: HasMany<typeof Aprendiz>
-
 }

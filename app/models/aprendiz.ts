@@ -45,7 +45,7 @@ export default class Aprendiz extends BaseModel {
   declare grupo: any
 
   @belongsTo(() => ProgramaFormacion, {
-    foreignKey: 'idPrograma_formacion',
+    foreignKey: 'idprograma_formacion',
   })
   declare programa: any
 
