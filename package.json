@@ -60,8 +60,10 @@
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "luxon": "^3.7.2",
+    "multer": "^2.0.2",
     "pg": "^8.16.3",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "xlsx": "^0.18.5"
   },
   "hotHook": {
     "boundaries": [

@@ -33,7 +33,7 @@ export default class CentroFormacionController {
       } = request.body()
 
       const centro = await CentroFormacion.create({
-        idregional,
+    
         centro_formacioncol,
         idmunicipios,
         direccion,
@@ -72,7 +72,7 @@ export default class CentroFormacionController {
       }
 
       const {
-        idregional,
+        
         centro_formacioncol,
         idmunicipios,
         direccion,
@@ -82,7 +82,6 @@ export default class CentroFormacionController {
         correosubdirector,
       } = request.body()
 
-      centro.idregional = idregional ?? centro.idregional
       centro.centro_formacioncol = centro_formacioncol ?? centro.centro_formacioncol
       centro.idmunicipios = idmunicipios ?? centro.idmunicipios
       centro.direccion = direccion ?? centro.direccion

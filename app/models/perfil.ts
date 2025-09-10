@@ -1,4 +1,3 @@
-
 import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
 import Usuario from './usuario.js'
@@ -6,17 +5,12 @@ import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Aprendiz from './aprendiz.js'
 
 export default class Perfil extends BaseModel {
+  public static table = 'perfil'
   @column({ isPrimary: true })
   declare idperfil: number
 
   @column()
   declare perfil: string
-
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
 
   @hasMany(() => Usuario, {
     foreignKey: 'idperfil',
