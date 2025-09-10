@@ -4,6 +4,7 @@
 
 import AprendizsController from '#controllers/aprendizs_controller'
 import router from '@adonisjs/core/services/router'
+import './routes/elecciones.js'
 
 // const usuarioController = new UsuarioController()
 
