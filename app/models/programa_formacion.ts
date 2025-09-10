@@ -16,7 +16,7 @@ export default class ProgramaFormacion extends BaseModel {
   declare programa: string
 
   @column()
-  declare codigo_programa: number
+  declare codigo_programa: string
 
   @column()
   declare version: string
@@ -26,18 +26,14 @@ export default class ProgramaFormacion extends BaseModel {
 
   @column()
   declare idnivel_formacion: number
-  
+
   @belongsTo(() => NivelFormacion, {
     foreignKey: 'idnivel_formacion',
   })
-  
   declare formacion: BelongsTo<typeof NivelFormacion>
 
-  
   @hasMany(() => Aprendiz, {
-  foreignKey: 'idPrograma_formacion',
+    foreignKey: 'idPrograma_formacion',
   })
-      
   declare departamento: HasMany<typeof Aprendiz>
-
 }
