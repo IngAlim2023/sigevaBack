@@ -26,61 +26,95 @@ export default class ImportExcelController {
       // Leer Excel
       const workbook = XLSX.read(file.tmpPath, { type: 'file' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
 
-      // Buscar o crear perfil "Aprendiz"
+      // Leer la ficha de caracterización y programa (ajusta celdas según tu Excel)
+      const numeroGrupo = sheet['A2']?.v?.toString().trim()
+      const nombrePrograma = sheet['A3']?.v?.toString().trim()
+
+      if (!numeroGrupo || !nombrePrograma) {
+        return response
+          .status(400)
+          .json({ message: 'No se encontró la ficha de caracterización o el programa en el Excel' })
+      }
+
+      // Convertir tabla a JSON, comenzando desde la fila de encabezados reales
+      const data: any[] = XLSX.utils.sheet_to_json(sheet, { range: 4 })
+
+      // Perfil "Aprendiz"
       let perfil = await Perfil.query({ client: trx }).where('perfil', 'Aprendiz').first()
       if (!perfil) {
         perfil = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
       }
 
+      // Nivel de formación predeterminado (ej: "Técnico")
+      let nivel = await NivelFormacion.query({ client: trx })
+        .where('nivel_formacion', 'Técnico')
+        .first()
+      if (!nivel) {
+        nivel = await NivelFormacion.create({ nivel_formacion: 'Técnico' }, { client: trx })
+      }
+
+      // Área temática predeterminada (ej: "Software")
+      // ID fijo del área temática "Software"
+      const AREA_SOFTWARE_ID = 1
+
+      // Grupo
+      let grupo = await Grupo.query({ client: trx }).where('grupo', numeroGrupo).first()
+      if (!grupo) {
+        grupo = await Grupo.create({ grupo: numeroGrupo, jornada }, { client: trx })
+      }
+
+      // Programa
+      let programa = await ProgramaFormacion.query({ client: trx })
+        .where('programa', nombrePrograma)
+        .first()
+      if (!programa) {
+        programa = await ProgramaFormacion.create(
+          {
+            programa: nombrePrograma,
+            idnivel_formacion: nivel.idnivel_formacion,
+            idarea_tematica: AREA_SOFTWARE_ID,
+            codigo_programa: 'N/A', // valor por defecto si es obligatorio
+            version: '1.0', // valor por defecto si es obligatorio
+            duracion: 0, // valor por defecto si es obligatorio
+          },
+          { client: trx }
+        )
+      }
+
+      // Iterar sobre cada aprendiz
       for (const fila of data) {
         const {
-          'numero_documento': numeroDocumento,
+          'Tipo de Documento': tipoDocumento,
+          'Número de Documento': numeroDocumento,
           'Nombre': nombres,
           'Apellidos': apellidos,
           'Celular': celular,
           'Correo Electrónico': email,
           'Estado': estado,
-          'ficha de caracterización': numeroGrupo,
-          'Programa': nombrePrograma,
         } = fila
+
+        if (!numeroDocumento || !email) {
+          console.warn('Fila ignorada: faltan datos', fila)
+          continue
+        }
 
         // Verificar si ya existe el aprendiz
         const aprendizExist = await Aprendiz.query({ client: trx })
           .where('email', email)
           .orWhere('numero_documento', numeroDocumento)
           .first()
-        if (aprendizExist) continue // saltar si ya existe
-
-        // Buscar o crear grupo
-        let grupo = await Grupo.query({ client: trx }).where('grupo', numeroGrupo).first()
-        if (!grupo) {
-          grupo = await Grupo.create({ grupo: numeroGrupo, jornada }, { client: trx })
-        }
-
-        // Buscar o crear programa
-        let programa = await ProgramaFormacion.query({ client: trx })
-          .where('programa', nombrePrograma)
-          .first()
-        if (!programa) {
-          programa = await ProgramaFormacion.create(
-            {
-              programa: nombrePrograma,
-              // Puedes agregar otros campos como codigo_programa, version, duracion si los tienes
-            },
-            { client: trx }
-          )
-        }
+        if (aprendizExist) continue
 
         // Crear contraseña temporal y hash
-        const passwordTemporal = Math.random().toString(36).slice(-8)
+        const passwordTemporal = numeroDocumento
         const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
 
-        // Crear aprendiz con grupo y programa asignados
+        // Crear aprendiz
         await Aprendiz.create(
           {
             perfil_idperfil: perfil.idperfil,
+            tipo_documento: tipoDocumento,
             numero_documento: numeroDocumento,
             nombres,
             apellidos,
