@@ -4,21 +4,24 @@ import { DateTime } from 'luxon'
 
 export default class Eleccione extends BaseModel {
   @column({ isPrimary: true })
-  declare idEleccion: number
+  declare ideleccion: number
 
-  @column()
+  @column({columnName: 'idcentro_formacion'})
   declare idCentro_formacion: number
 
-  @column()
+  @column({columnName: 'fecha_inicio'})
   declare fecha_inicio: Date
 
-  @column()
+  @column({columnName: 'fecha_fin'})
   declare fecha_fin: Date
 
-  @column()
+  @column({columnName: 'hora_inicio'})
   declare hora_inicio: DateTime
 
-  @column()
+  @column({columnName: 'hora_fin'})
   declare hora_fin: DateTime
+
+  @column()
+  declare nombre: string
 
 }
