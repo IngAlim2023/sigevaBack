@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 export default class UsuariosController {
   async register({ request, response }: HttpContext) {
     try {
-      const { email, password, estado, idperfil, idcentro_formacion  } = request.body()
+      const { email, password, estado, idperfil, idcentro_formacion } = request.body()
 
       const existe = await Usuario.findBy('email', email)
       if (existe) {
@@ -24,7 +24,6 @@ export default class UsuariosController {
           estado: usuario.estado,
           perfil: usuario.idperfil,
           CentroFormacion: usuario.idcentro_formacion
-
         }
       })
     } catch (error) {
@@ -57,7 +56,6 @@ export default class UsuariosController {
           id: usuario.idusuarios,
           email: usuario.email,
           estado: usuario.estado
-    
         }
       })
     } catch (error) {
@@ -68,5 +66,44 @@ export default class UsuariosController {
       })
     }
   }
-  
+
+  async update({ request, response, params }: HttpContext) {
+    try {
+      const id = params.id
+      const usuario = await Usuario.find(id)
+
+      if (!usuario) {
+        return response.status(404).json({ success: false, message: 'Usuario no encontrado' })
+      }
+
+      const { email, password, estado, idperfil, idcentro_formacion } = request.body()
+
+      // Solo actualiza si se envía un nuevo valor
+      if (email) usuario.email = email
+      if (password) usuario.password = await bcrypt.hash(password, 10)
+      if (estado !== undefined) usuario.estado = estado
+      if (idperfil) usuario.idperfil = idperfil
+      if (idcentro_formacion) usuario.idcentro_formacion = idcentro_formacion
+
+      await usuario.save()
+
+      return response.status(200).json({
+        success: true,
+        message: 'Usuario actualizado correctamente',
+        data: {
+          id: usuario.idusuarios,
+          email: usuario.email,
+          estado: usuario.estado,
+          perfil: usuario.idperfil,
+          CentroFormacion: usuario.idcentro_formacion
+        }
+      })
+    } catch (error) {
+      return response.status(500).json({
+        success: false,
+        message: 'Error interno al actualizar usuario',
+        error: error.message
+      })
+    }
+  }
 }
