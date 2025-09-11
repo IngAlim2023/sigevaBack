@@ -6,7 +6,7 @@ import  type{ BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Candidatos from './candidatos.js'
 
 export default class Eleccione extends BaseModel {
-  @column({ isPrimary: true })
+  @column({ isPrimary: true, columnName: 'ideleccion'  })
   declare idEleccion: number
 
   @column()
@@ -32,5 +32,5 @@ export default class Eleccione extends BaseModel {
   @hasMany(() => Candidatos, {
     foreignKey: 'idEleccion',
     })
-    declare candidato: HasMany<typeof Candidatos>
+    declare Eleccione: HasMany<typeof Candidatos>
 }

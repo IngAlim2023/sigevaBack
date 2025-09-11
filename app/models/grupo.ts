@@ -16,5 +16,5 @@ export default class Grupo extends BaseModel {
   @hasMany(() => Aprendiz, {
     foreignKey: 'idgrupo',
   })
-  declare departamento: HasMany<typeof Aprendiz>
+  declare aprendices: HasMany<typeof Aprendiz>
 }

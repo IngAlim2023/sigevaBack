@@ -4,6 +4,7 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import Aprendiz from './aprendiz.js'
 
 export default class Votoxcandidato extends BaseModel {
+  public static table = 'votoxcandidato'
   @column({ isPrimary: true })
   declare idvotoxcandidato: number
 
@@ -19,14 +20,12 @@ export default class Votoxcandidato extends BaseModel {
   @belongsTo(() => Candidatos, {
   foreignKey: 'idcandidatos',
 })
-   
   declare candidato: BelongsTo<typeof Candidatos>
 
     
   @belongsTo(() => Aprendiz, {
   foreignKey: 'idAprendiz',
 })
-   
   declare aprendiz: BelongsTo<typeof Aprendiz>
 
 
