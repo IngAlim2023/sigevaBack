@@ -138,6 +138,7 @@ export default class AprendizsController {
       })
     }
   }
+
   async actualizar({ request, response, params }: HttpContext) {
     try {
       const id = params.id
