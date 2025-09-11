@@ -11,8 +11,6 @@ export default class NivelFormacion extends BaseModel {
   @column()
   declare nivel_formacion: string
 
-
-
   @hasMany(() => ProgramaFormacion, {
     foreignKey: 'idnivel_formacion',
   })

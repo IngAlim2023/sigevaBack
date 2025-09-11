@@ -2,6 +2,7 @@
 
 // eslint-disable-next-line @adonisjs/prefer-lazy-controller-import
 
+
 import AprendizsController from '#controllers/aprendizs_controller'
 import ImportExcelController from '#controllers/ImportController'
 import router from '@adonisjs/core/services/router'
@@ -20,3 +21,6 @@ router.post('/registro', [AprendizsController, 'registro'])
 
 
 router.post('/aprendices/importar', [ImportExcelController, 'importarAprendices'])
+
+import './routes/candidato.js'
+
