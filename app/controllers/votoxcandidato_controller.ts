@@ -8,7 +8,7 @@ export default class VotoxcandidatoController {
     async crear({ request, response }: HttpContext) {
         try {
             const data = request.only(['idcandidatos', 'idaprendiz', 'contador'])
-            const votico = await Votoxcandidato.create(data)
+            await Votoxcandidato.create(data)
             return response.status(201).json({ mensaje: "Éxito" })
         } catch (error) {
             return response.status(500).json({ mensaje: "Error", error: error.message })

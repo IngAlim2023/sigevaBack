@@ -7,7 +7,6 @@ router
     .group(() => {
         
         router.get('/traer', [VotoxcandidatoController, 'getAll'])
-        router.get('/years', [VotoxcandidatoController, 'getYears'])
     }).prefix('/votoxcandidato')
 
 
