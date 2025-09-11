@@ -23,7 +23,7 @@ export default class CandidatosController {
           numero_tarjeton: payload.numero_tarjeton,
           foto_url: payload.foto_url ?? null,
         },
-        fotoFile?.tmpPath ?? null // si llega archivo, se sube a Cloudinary
+        fotoFile?.tmpPath ?? null
       )
 
       return response.created({
@@ -66,7 +66,6 @@ export default class CandidatosController {
         return response.badRequest({ message: 'El parámetro id debe ser numérico' })
       }
 
-      // Leer archivo opcional
       const fotoFile = request.file('foto', {
         size: '5mb',
         extnames: ['jpg', 'jpeg', 'png', 'webp'],
@@ -94,6 +93,22 @@ export default class CandidatosController {
     } catch (error: any) {
       return response.badRequest({
         message: error?.message ?? 'Error al actualizar candidato',
+      })
+    }
+  }
+
+  public async delete({ params, response }: HttpContext) {
+    try {
+      const idcandidatos = Number(params.id)
+      if (Number.isNaN(idcandidatos)) {
+        return response.badRequest({ message: 'El parámetro id debe ser numérico' })
+      }
+
+      const result = await CandidatosService.deleteCandidato(idcandidatos)
+      return response.ok(result)
+    } catch (error: any) {
+      return response.badRequest({
+        message: error?.message ?? 'Error al eliminar candidato',
       })
     }
   }
