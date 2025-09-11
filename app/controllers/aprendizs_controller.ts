@@ -227,14 +227,16 @@ export default class AprendizsController {
         .preload('grupo')
         .first()
 
-      if (!aprendizExist) return response.status(401).json({ message: 'Fallo en la autenticación' })
+      if (!aprendizExist)
+        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
 
       const verifyPassword = await bcrypt.compare(password, aprendizExist.password)
 
       if (!verifyPassword)
-        return response.status(401).json({ message: 'Fallo en la autenticación' })
+        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
 
       return response.status(200).json({
+        success: true,
         message: 'Autenticado',
         data: {
           id: aprendizExist.idaprendiz,
