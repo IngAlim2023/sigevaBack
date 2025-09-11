@@ -30,10 +30,10 @@ export default class CentroFormacion extends BaseModel {
   declare correosubdirector: string
 
   @column({ columnName: 'idregional' })
-  declare idRegionales: number
+  declare idregional: number
 
   @belongsTo(() => Regionale,{
-    foreignKey: 'idRegionales'
+    foreignKey: 'idregional'
   })
   declare regional: BelongsTo<typeof Regionale>
 
