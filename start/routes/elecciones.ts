@@ -6,9 +6,11 @@ import EleccionControler from "#controllers/eleccion_controller"
 const eleccion = new EleccionControler;
 
 
-router.get('/eleccion', eleccion.traerEleccion)
-router.get('/eleccion/centro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
+router.get('/api/eleccion', eleccion.traerEleccion)
+router.get('/api/eleccionPorCentro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
 
-router.post('/crear/eleccion', eleccion.crearEleccion)
+router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)//Nueva para filtrar por gurpos
 
-router.put('/actualizar/eleccion/:idEleccion', eleccion.actualizarEleccion)
+router.post('/api/eleccion/crear', eleccion.crearEleccion)
+
+router.put('/api/eleccionActualizar/:idEleccion', eleccion.actualizarEleccion)
