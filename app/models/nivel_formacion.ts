@@ -4,6 +4,7 @@ import ProgramaFormacion from './programa_formacion.js'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 
 export default class NivelFormacion extends BaseModel {
+  public static table = 'nivel_formacion'
   @column({ isPrimary: true })
   declare idnivel_formacion: number
 

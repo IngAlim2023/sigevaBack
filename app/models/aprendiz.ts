@@ -12,7 +12,12 @@ export default class Aprendiz extends BaseModel {
   declare idaprendiz: number
 
   @column()
+  declare idgrupo: number
+
+  @column()
   declare perfil_idperfil: number
+  @column()
+  declare idprograma_formacion: number
 
   @column()
   declare nombres: string
@@ -45,7 +50,7 @@ export default class Aprendiz extends BaseModel {
   declare grupo: any
 
   @belongsTo(() => ProgramaFormacion, {
-    foreignKey: 'idPrograma_formacion',
+    foreignKey: 'idprograma_formacion',
   })
   declare programa: any
 
@@ -54,15 +59,13 @@ export default class Aprendiz extends BaseModel {
   })
   declare perfil: any
 
-   @hasMany(() => Candidatos, {
+  @hasMany(() => Candidatos, {
     foreignKey: 'idAprendiz',
-    })
-    
-    declare departamento: HasMany<typeof Candidatos>
+  })
+  declare departamento: HasMany<typeof Candidatos>
 
-    @hasMany(() => Votoxcandidato, {
+  @hasMany(() => Votoxcandidato, {
     foreignKey: 'idAprendiz',
-    })
-    
-    declare voto: HasMany<typeof Votoxcandidato>
+  })
+  declare voto: HasMany<typeof Votoxcandidato>
 }
