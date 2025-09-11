@@ -1,39 +1,47 @@
-import xlsx from 'xlsx'
-import Grupo from '#models/grupo'
 import { HttpContext } from '@adonisjs/core/http'
+import Grupo from '#models/grupo'
 
-export default class GruposController {
-  public static subirDesdeExcel = async ({ request, response }: HttpContext) => {
+export default class GrupoController {
+  async getAll({ response }: HttpContext) {
     try {
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ error: 'No se subió ningún archivo' })
-      }
-
-      // Leer Excel
-      const workbook = xlsx.readFile(file.tmpPath!)
-      const sheetName = workbook.SheetNames[0]
-      const data: { grupo: string; jornada: string }[] = xlsx.utils.sheet_to_json(
-        workbook.Sheets[sheetName]
-      )
-
-      for (const row of data) {
-        const { grupo, jornada } = row
-
-        // Evitar duplicados
-        const yaExiste = await Grupo.query().where('grupo', grupo).first()
-        if (yaExiste) continue
-
-        await Grupo.create({
-          grupo,
-          jornada,
-        })
-      }
-
-      return response.json({ mensaje: 'Grupos importados correctamente' })
+      const grupos = await Grupo.query().preload('aprendices')
+      return response.status(200).json({ mensaje: 'Éxito', data: grupos })
     } catch (error) {
-      console.error('Error al importar Excel:', error)
-      return response.status(500).json({ error: 'Error al importar datos' })
+      return response.status(500).json({ mensaje: 'Error', error })
+    }
+  }
+
+  async getById({ params, response }: HttpContext) {
+    try {
+      const grupo = await Grupo.find(params.id)
+      if (!grupo) return response.status(404).json({ mensaje: 'Grupo no encontrado' })
+      await grupo.load('aprendices')
+      return response.status(200).json({ mensaje: 'Éxito', data: grupo })
+    } catch (error) {
+      return response.status(500).json({ mensaje: 'Error', error })
+    }
+  }
+
+  async crear({ request, response }: HttpContext) {
+    try {
+      const data = request.only(['grupo', 'jornada'])
+      const grupo = await Grupo.create(data)
+      return response.status(201).json({ mensaje: 'Éxito', data: grupo })
+    } catch (error) {
+      return response.status(500).json({ mensaje: 'Error', error })
+    }
+  }
+
+  async actualizar({ params, request, response }: HttpContext) {
+    try {
+      const grupo = await Grupo.find(params.id)
+      if (!grupo) return response.status(404).json({ mensaje: 'Grupo no encontrado' })
+      const data = request.only(['grupo', 'jornada'])
+      grupo.merge(data)
+      await grupo.save()
+      return response.status(200).json({ mensaje: 'Éxito', data: grupo })
+    } catch (error) {
+      return response.status(500).json({ mensaje: 'Error', error })
     }
   }
 }
