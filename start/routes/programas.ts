@@ -2,8 +2,8 @@ import router from '@adonisjs/core/services/router'
 
 router
   .group(() => {
-    router.get('/', '#controllers/programas_formacion_controller.index')
-    router.post('/', '#controllers/programas_formacion_controller.store')
-    router.put('/:id', '#controllers/programas_formacion_controller.update')
+    router.get('/listar', '#controllers/programas_formacion_controller.index')
+    router.post('/crear', '#controllers/programas_formacion_controller.store')
+    router.put('/actualizar/:id', '#controllers/programas_formacion_controller.update')
   })
-  .prefix('/programas')
+  .prefix('/programasFormacion')
