@@ -115,4 +115,9 @@ export default class CandidatosService {
       throw error
     }
   }
+
+  static async getAllCandidatos() {
+    const candidatos = await Candidatos.query().orderBy('idcandidatos', 'asc')
+    return candidatos
+  }
 }
