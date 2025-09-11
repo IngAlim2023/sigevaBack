@@ -13,10 +13,8 @@ export default class Grupo extends BaseModel {
   @column()
   declare jornada: string
 
- 
-
   @hasMany(() => Aprendiz, {
     foreignKey: 'idgrupo',
   })
-  declare departamento: HasMany<typeof Aprendiz>
+  declare aprendices: HasMany<typeof Aprendiz>
 }
