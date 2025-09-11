@@ -10,19 +10,20 @@ export default class Eleccione extends BaseModel {
   declare idEleccion: number
 
   @column()
+
   declare fecha_inicio: Date
 
-  @column()
+  @column({columnName: 'fecha_fin'})
   declare fecha_fin: Date
 
-  @column()
+  @column({columnName: 'hora_inicio'})
   declare hora_inicio: DateTime
 
-  @column()
+  @column({columnName: 'hora_fin'})
   declare hora_fin: DateTime
-  
+
   @column()
-  declare idCentro_formacion: number
+  declare nombre: string
 
   @belongsTo(() => CentroFormacion, {
   foreignKey: 'idcentro_formacion',
@@ -30,7 +31,7 @@ export default class Eleccione extends BaseModel {
   declare centro: BelongsTo<typeof CentroFormacion>
 
   @hasMany(() => Candidatos, {
-    foreignKey: 'idEleccion',
+    foreignKey: 'ideleccion',
     })
     declare Eleccione: HasMany<typeof Candidatos>
 }
