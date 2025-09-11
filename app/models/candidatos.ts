@@ -17,7 +17,6 @@ export default class Candidatos extends BaseModel {
 
   @column()
   declare idaprendiz: number
-  declare idaprendiz: number
 
   @column()
   declare foto: string
