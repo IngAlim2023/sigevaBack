@@ -11,12 +11,6 @@ export default class NivelFormacion extends BaseModel {
   @column()
   declare nivel_formacion: string
 
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
-
   @hasMany(() => ProgramaFormacion, {
     foreignKey: 'idnivel_formacion',
   })
