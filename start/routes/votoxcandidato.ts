@@ -7,6 +7,7 @@ router
     .group(() => {
         
         router.get('/traer', [VotoxcandidatoController, 'getAll'])
+        router.get('/cantidad/:id', [VotoxcandidatoController, 'quantityVotes'])
     }).prefix('/votoxcandidato')
 
 

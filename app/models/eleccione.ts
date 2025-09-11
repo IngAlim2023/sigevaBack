@@ -6,12 +6,17 @@ import  type{ BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Candidatos from './candidatos.js'
 
 export default class Eleccione extends BaseModel {
-  @column({ isPrimary: true, columnName: 'ideleccion'  })
-  declare idEleccion: number
 
-  @column()
+  @column({ isPrimary: true })
+  declare ideleccion: number
 
-  declare fecha_inicio: Date
+
+  @column({columnName: 'idcentro_formacion'})
+  declare idCentro_formacion: number
+
+  @column({columnName: 'fecha_inicio'})
+  declare fecha_inicio: Date  
+
 
   @column({columnName: 'fecha_fin'})
   declare fecha_fin: Date
@@ -33,5 +38,9 @@ export default class Eleccione extends BaseModel {
   @hasMany(() => Candidatos, {
     foreignKey: 'ideleccion',
     })
-    declare Eleccione: HasMany<typeof Candidatos>
+    declare candidato: HasMany<typeof Candidatos>
+  
 }
+
+
+
