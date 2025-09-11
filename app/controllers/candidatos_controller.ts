@@ -112,4 +112,19 @@ export default class CandidatosController {
       })
     }
   }
+
+  public async show({ response }: HttpContext) {
+    try {
+      const candidatos = await CandidatosService.getAllCandidatos()
+
+      return response.ok({
+        message: 'Candidatos obtenidos correctamente',
+        data: candidatos,
+      })
+    } catch (error: any) {
+      return response.badRequest({
+        message: error?.message ?? 'Error al obtener candidatos',
+      })
+    }
+  }
 }
