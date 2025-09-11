@@ -1,11 +1,9 @@
 import router from '@adonisjs/core/services/router'
 
-const ProgramasFormacionController = () => import('#controllers/programas_formacion_controller')
-
 router
   .group(() => {
-    router.get('/', [ProgramasFormacionController, 'index'])
-    router.post('/', [ProgramasFormacionController, 'store'])
-    router.put('/:id', [ProgramasFormacionController, 'update'])
+    router.get('/', '#controllers/programas_formacion_controller.index')
+    router.post('/', '#controllers/programas_formacion_controller.store')
+    router.put('/:id', '#controllers/programas_formacion_controller.update')
   })
   .prefix('/programas')

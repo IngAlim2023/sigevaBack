@@ -50,7 +50,7 @@ export default class UsuariosController {
         return response.status(401).json({ success: false, message: 'Contraseña incorrecta' })
       }
 
-      const perfil = await Perfil.findBy("idperfil", usuario.idperfil )
+      const perfil = await Perfil.findBy('idperfil', usuario.idperfil)
 
       return response.status(200).json({
         success: true,
@@ -59,7 +59,8 @@ export default class UsuariosController {
           id: usuario.idusuarios,
           email: usuario.email,
           estado: usuario.estado,
-          perfil: perfil?.perfil
+          perfil: perfil?.perfil,
+          centroFormacion: usuario.idcentro_formacion,
         }
       })
     } catch (error) {
