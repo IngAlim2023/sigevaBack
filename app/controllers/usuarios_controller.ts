@@ -1,6 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import Usuario from '#models/usuario'
 import bcrypt from 'bcrypt'
+import Perfil from '#models/perfil'
 
 export default class UsuariosController {
   async register({ request, response }: HttpContext) {
@@ -49,13 +50,17 @@ export default class UsuariosController {
         return response.status(401).json({ success: false, message: 'Contraseña incorrecta' })
       }
 
+      const perfil = await Perfil.findBy('idperfil', usuario.idperfil)
+
       return response.status(200).json({
         success: true,
         message: 'Login exitoso',
         data: {
           id: usuario.idusuarios,
           email: usuario.email,
-          estado: usuario.estado
+          estado: usuario.estado,
+          perfil: perfil?.perfil,
+          centroFormacion: usuario.idcentro_formacion,
         }
       })
     } catch (error) {
