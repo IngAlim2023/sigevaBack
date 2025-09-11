@@ -22,7 +22,7 @@ export default class CentroFormacionController {
   async store({ request, response }: HttpContext) {
     try {
       const {
-        idregional,
+        idRegionales,
         centro_formacioncol,
         idmunicipios,
         direccion,
@@ -33,7 +33,7 @@ export default class CentroFormacionController {
       } = request.body()
 
       const centro = await CentroFormacion.create({
-        idregional,
+        idRegionales,
         centro_formacioncol,
         idmunicipios,
         direccion,
@@ -72,7 +72,7 @@ export default class CentroFormacionController {
       }
 
       const {
-        idregional,
+        idRegionales,
         centro_formacioncol,
         idmunicipios,
         direccion,
@@ -82,7 +82,7 @@ export default class CentroFormacionController {
         correosubdirector,
       } = request.body()
 
-      centro.idregional = idregional ?? centro.idregional
+      centro.idRegionales = idRegionales ?? centro.idRegionales
       centro.centro_formacioncol = centro_formacioncol ?? centro.centro_formacioncol
       centro.idmunicipios = idmunicipios ?? centro.idmunicipios
       centro.direccion = direccion ?? centro.direccion

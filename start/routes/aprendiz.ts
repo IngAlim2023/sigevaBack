@@ -1,9 +1,8 @@
 import router from '@adonisjs/core/services/router'
 import AprendizsController from '#controllers/aprendizs_controller'
-import ImportController from '#controllers/ImportController'
 
 const aprendizsController = new AprendizsController()
-const importController = new ImportController()
+
 
 router
   .group(() => {
@@ -21,7 +20,5 @@ router
 
     // Actualizar contraseña por correo
     router.put('/contrasena', aprendizsController.actualizarContrasena)
-
-    router.post('/aprendices/importar', importController.importarAprendices)
   })
   .prefix('/aprendiz') // Esto hace que todas las rutas tengan /aprendiz al inicio por si las moscas
