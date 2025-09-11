@@ -1,21 +1,27 @@
 import router from '@adonisjs/core/services/router'
+import AprendizsController from '#controllers/aprendizs_controller'
+import ImportController from '#controllers/ImportController'
+
+const aprendizsController = new AprendizsController()
+const importController = new ImportController()
+
 router
   .group(() => {
     // Crear aprendiz
-    router.post('/registro', 'AprendizsController.registro')
+    router.post('/registro', aprendizsController.registro)
 
     // Traer todos los aprendices
-    router.get('/', 'AprendizsController.traer')
+    router.get('/', aprendizsController.traer)
 
     // Actualizar aprendiz por id
-    router.put('/:id', 'AprendizsController.actualizar')
+    router.put('/actualizar/:id', aprendizsController.actualizar)
 
     // Login
-    router.post('/login', 'AprendizsController.login')
+    router.post('/login', aprendizsController.login)
 
     // Actualizar contraseña por correo
-    router.put('/contrasena', 'AprendizsController.actualizarContrasena')
+    router.put('/contrasena', aprendizsController.actualizarContrasena)
 
-    router.post('/aprendices/importar', 'ImportExcelController.importarAprendices')
+    router.post('/aprendices/importar', importController.importarAprendices)
   })
   .prefix('/aprendiz') // Esto hace que todas las rutas tengan /aprendiz al inicio por si las moscas
