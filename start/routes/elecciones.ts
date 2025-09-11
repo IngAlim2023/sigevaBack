@@ -7,7 +7,7 @@ const eleccion = new EleccionControler;
 
 
 router.get('/eleccion', eleccion.traerEleccion)
-router.get('/eleccion/centro/:idCentro_formacion', eleccion.traerPorCentroFormacion])
+router.get('/eleccion/centro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
 
 router.post('/crear/eleccion', eleccion.crearEleccion)
 
