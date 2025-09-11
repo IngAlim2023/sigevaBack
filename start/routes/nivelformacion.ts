@@ -5,12 +5,12 @@ const nivelFormacionController = new NivelFormacionController;
 
 router
   .group(() => {
-    router.post('/', nivelFormacionController.crear)
+    router.post('/crear', nivelFormacionController.crear)
 
-    router.get('/', nivelFormacionController.getAll)
+    router.get('/listar', nivelFormacionController.getAll)
 
-    router.get('/:id', nivelFormacionController.getById)
+    router.get('/listar/:id', nivelFormacionController.getById)
 
-    router.put('/:id', nivelFormacionController.actualizar)
+    router.put('/actualizar/:id', nivelFormacionController.actualizar)
   })
-  .prefix('/nivel')
+  .prefix('/api/nivel')

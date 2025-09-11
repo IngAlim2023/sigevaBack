@@ -5,4 +5,4 @@ import router from "@adonisjs/core/services/router";
 
 const importController = new ImportController();
 
-router.post('/aprendices/importar',importController.importarAprendices)
+router.post('/api/aprendices/importarExcel',importController.importarAprendices)

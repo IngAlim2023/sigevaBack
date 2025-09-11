@@ -5,9 +5,9 @@ const grupoController = new GrupoController();
 
 router
   .group(() => {
-    router.post('/', grupoController.crear)
-    router.get('/', grupoController.getAll)
-    router.get('/:id', grupoController.getById)
-    router.put('/:id', grupoController.actualizar)
+    router.post('/crear', grupoController.crear)
+    router.get('/listar', grupoController.getAll)
+    router.get('/listar/:id', grupoController.getById)
+    router.put('/listar/:id', grupoController.actualizar)
   })
-  .prefix('/grupo')
+  .prefix('/api/grupo')
