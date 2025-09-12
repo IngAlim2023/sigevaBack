@@ -9,78 +9,192 @@ import NivelFormacion from '#models/nivel_formacion'
 import db from '@adonisjs/lucid/services/db'
 import bcrypt from 'bcrypt'
 import XLSX from 'xlsx'
+import Usuario from '#models/usuario'
 
 export default class ImportExcelController {
   // Método para importar aprendices
-  async importarAprendices({ request, response }: HttpContext) {
+  public async importarAprendices({ request, response }: HttpContext) {
     const trx = await db.transaction()
+
     try {
-      // Recibir archivo Excel y jornada desde frontend
+      // 1) Contexto del admin: viene userId desde el frontend
+      const userId = Number(request.input('userId'))
+      if (!userId) {
+        return response.badRequest({ success: false, message: 'Falta userId en el body' })
+      }
+
+      const usuario = await Usuario.find(userId)
+      if (!usuario) {
+        return response.unauthorized({ success: false, message: 'Usuario inválido' })
+      }
+      // Busca el ID del rol "Funcionario" (case-insensitive)
+      const perfilFuncionario = await Perfil.query()
+        .whereRaw('LOWER(perfil) = LOWER(?)', ['funcionario'])
+        .first()
+
+      if (!perfilFuncionario) {
+        return response.status(500).json({
+          success: false,
+          message: 'Rol "Funcionario" no está configurado en la tabla perfil',
+        })
+      }
+
+      // Compara por ID, no por nombre
+      if (usuario.idperfil !== perfilFuncionario.idperfil) {
+        return response.forbidden({
+          success: false,
+          message: 'Solo funcionarios pueden importar aprendices',
+        })
+      }
+
+      const centroFormacionId = usuario.idcentro_formacion
+      if (!centroFormacionId) {
+        return response.badRequest({
+          success: false,
+          message: 'El usuario no tiene centro de formación asignado',
+        })
+      }
+
+      // 2) Archivo y params
       const file = request.file('excel')
       const { jornada } = request.only(['jornada'])
 
       if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
+        return response
+          .status(400)
+          .json({ success: false, message: 'Debes subir un archivo Excel' })
       }
 
-      // Leer Excel
+      // 3) Leer Excel
       const workbook = XLSX.read(file.tmpPath, { type: 'file' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
 
-      // Buscar o crear perfil "Aprendiz"
-      let perfil = await Perfil.query({ client: trx }).where('perfil', 'Aprendiz').first()
-      if (!perfil) {
-        perfil = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
+      const fichaCelda = sheet['C2']?.v?.toString().trim() || ''
+      const fichaLimpia = fichaCelda.replace(/–/g, '-')
+      const partes = fichaLimpia.split(' - ')
+
+      const numeroGrupo = partes[0]?.trim() || ''
+      const nombrePrograma = partes[1]?.trim() || ''
+
+      if (!numeroGrupo || !nombrePrograma) {
+        return response.status(400).json({
+          success: false,
+          message: 'No se encontró la ficha de caracterización o el programa en el Excel',
+        })
       }
 
+      const data: any[] = XLSX.utils.sheet_to_json(sheet, { range: 4, defval: '' })
+
+      // 4) Catálogos base
+      // Perfil "Aprendiz"
+      let perfil = await Perfil.query().where('perfil', 'Aprendiz').first()
+      if (!perfil) {
+        perfil = new Perfil()
+        perfil.perfil = 'Aprendiz'
+        await perfil.useTransaction(trx).save()
+      }
+
+      // Nivel "Técnico"
+      let nivel = await NivelFormacion.query().where('nivel_formacion', 'Técnico').first()
+      if (!nivel) {
+        nivel = new NivelFormacion()
+        nivel.nivel_formacion = 'Técnico'
+        await nivel.useTransaction(trx).save()
+      }
+
+      const AREA_SOFTWARE_ID = 1
+
+      // Grupo (por número de ficha)
+      let grupo = await Grupo.query().where('grupo', numeroGrupo).first()
+      if (!grupo) {
+        grupo = new Grupo()
+        grupo.grupo = numeroGrupo
+        grupo.jornada = jornada
+        await grupo.useTransaction(trx).save()
+      }
+
+      // Programa
+      let programa = await ProgramaFormacion.query().where('programa', nombrePrograma).first()
+      if (!programa) {
+        programa = new ProgramaFormacion()
+        Object.assign(programa, {
+          programa: nombrePrograma,
+          idnivel_formacion: nivel.idnivel_formacion,
+          idarea_tematica: AREA_SOFTWARE_ID,
+          codigo_programa: 'N/A',
+          version: '1.0',
+          duracion: 0,
+        })
+        await programa.useTransaction(trx).save()
+      } else {
+        programa.merge({
+          idnivel_formacion: programa.idnivel_formacion || nivel.idnivel_formacion,
+          idarea_tematica: programa.idarea_tematica || AREA_SOFTWARE_ID,
+          codigo_programa: programa.codigo_programa || 'N/A',
+          version: programa.version || '1.0',
+          duracion: programa.duracion || 0,
+        })
+        await programa.useTransaction(trx).save()
+      }
+
+      // 5) Iterar filas del Excel
       for (const fila of data) {
         const {
-          'numero_documento': numeroDocumento,
+          'Tipo de Documento': tipoDocumento,
+          'Número de Documento': numeroDocumento,
           'Nombre': nombres,
           'Apellidos': apellidos,
           'Celular': celular,
           'Correo Electrónico': email,
           'Estado': estado,
-          'ficha de caracterización': numeroGrupo,
-          'Programa': nombrePrograma,
+          ...otrosCampos
         } = fila
 
-        // Verificar si ya existe el aprendiz
-        const aprendizExist = await Aprendiz.query({ client: trx })
-          .where('email', email)
-          .orWhere('numero_documento', numeroDocumento)
-          .first()
-        if (aprendizExist) continue // saltar si ya existe
-
-        // Buscar o crear grupo
-        let grupo = await Grupo.query({ client: trx }).where('grupo', numeroGrupo).first()
-        if (!grupo) {
-          grupo = await Grupo.create({ grupo: numeroGrupo, jornada }, { client: trx })
+        if (!numeroDocumento || !email) {
+          // fila incompleta → ignorar
+          continue
         }
 
-        // Buscar o crear programa
-        let programa = await ProgramaFormacion.query({ client: trx })
-          .where('programa', nombrePrograma)
+        // Buscar aprendiz SOLO dentro del mismo centro (evita colisiones entre centros)
+        let aprendiz = await Aprendiz.query()
+          .where((q) => q.where('email', email).orWhere('numero_documento', numeroDocumento))
+          .andWhere('centro_formacion_idcentro_formacion', centroFormacionId)
           .first()
-        if (!programa) {
-          programa = await ProgramaFormacion.create(
-            {
-              programa: nombrePrograma,
-              // Puedes agregar otros campos como codigo_programa, version, duracion si los tienes
-            },
-            { client: trx }
-          )
-        }
 
-        // Crear contraseña temporal y hash
-        const passwordTemporal = Math.random().toString(36).slice(-8)
-        const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
+        if (aprendiz) {
+          const aprendizAny = aprendiz as any
 
-        // Crear aprendiz con grupo y programa asignados
-        await Aprendiz.create(
-          {
+          // Completar campos faltantes
+          Object.keys(otrosCampos).forEach((key) => {
+            if (!aprendizAny[key] && otrosCampos[key]) {
+              aprendizAny[key] = otrosCampos[key]
+            }
+          })
+
+          // Campos principales
+          aprendizAny.nombres = aprendizAny.nombres || nombres
+          aprendizAny.apellidos = aprendizAny.apellidos || apellidos
+          aprendizAny.celular = aprendizAny.celular || celular
+          aprendizAny.estado = aprendizAny.estado || estado
+          aprendizAny.tipo_documento = aprendizAny.tipo_documento || tipoDocumento
+          aprendizAny.idgrupo = aprendizAny.idgrupo || grupo.idgrupo
+          aprendizAny.idprograma_formacion =
+            aprendizAny.idprograma_formacion || programa.idprograma_formacion
+
+          // Asegurar centro siempre
+          aprendizAny.centro_formacion_idcentro_formacion =
+            aprendizAny.centro_formacion_idcentro_formacion || centroFormacionId
+
+          await aprendizAny.useTransaction(trx).save()
+        } else {
+          // Nuevo aprendiz
+          const passwordTemporal = numeroDocumento
+          const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
+
+          const aprendizNuevo = new Aprendiz()
+          Object.assign(aprendizNuevo, {
             perfil_idperfil: perfil.idperfil,
+            tipo_documento: tipoDocumento,
             numero_documento: numeroDocumento,
             nombres,
             apellidos,
@@ -90,17 +204,23 @@ export default class ImportExcelController {
             password: hashedPassword,
             idgrupo: grupo.idgrupo,
             idprograma_formacion: programa.idprograma_formacion,
-          },
-          { client: trx }
-        )
+
+            // Centro desde el usuario (admin) que hace la importación
+            centro_formacion_idcentro_formacion: centroFormacionId,
+
+            ...otrosCampos,
+          })
+          await aprendizNuevo.useTransaction(trx).save()
+        }
       }
 
       await trx.commit()
-      return response.ok({ message: 'Aprendices importados con éxito' })
-    } catch (error) {
+      return response.ok({ success: true, message: 'Aprendices importados con éxito' })
+    } catch (error: any) {
       await trx.rollback()
       console.error(error)
       return response.status(500).json({
+        success: false,
         message: 'Error al importar aprendices',
         error: error.message,
       })

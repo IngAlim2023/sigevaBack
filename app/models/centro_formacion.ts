@@ -6,6 +6,8 @@ import Eleccione from './eleccione.js'
 import Usuario from './usuario.js'
 
 export default class CentroFormacion extends BaseModel {
+  public static table = 'centro_formacion'
+  
   @column({ isPrimary: true })
   declare idcentro_formacion: number
 
@@ -27,11 +29,11 @@ export default class CentroFormacion extends BaseModel {
   @column()
   declare correosubdirector: string
 
-  @column()
-  declare idRegionales: number
+  @column({ columnName: 'idregional' })
+  declare idregional: number
 
   @belongsTo(() => Regionale,{
-    foreignKey: 'idRegionales'
+    foreignKey: 'idregional'
   })
   declare regional: BelongsTo<typeof Regionale>
 

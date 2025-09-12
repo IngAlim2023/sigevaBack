@@ -9,6 +9,7 @@ import db from '@adonisjs/lucid/services/db'
 import Perfil from '#models/perfil'
 //contraseña
 import bcrypt from 'bcrypt'
+import CentroFormacion from '#models/centro_formacion'
 export default class AprendizsController {
   async registro({ request, response }: HttpContext) {
     const trx = await db.transaction()
@@ -34,7 +35,6 @@ export default class AprendizsController {
         'password',
         'nivel_formacion',
       ])
-      const perfil = await Perfil.findBy('perfil', 'Aprendiz')
 
       // Verificar si el email ya existe
       const emailExist = await Aprendiz.findBy('email', data.email)
@@ -138,6 +138,7 @@ export default class AprendizsController {
       })
     }
   }
+
   async actualizar({ request, response, params }: HttpContext) {
     try {
       const id = params.id
@@ -191,7 +192,7 @@ export default class AprendizsController {
     }
   }
 
-  async actualizarContrasena({ request, response, params }: HttpContext) {
+  async actualizarContrasena({ request, response }: HttpContext) {
     try {
       const { email, password } = request.only(['email', 'password'])
 
@@ -221,23 +222,31 @@ export default class AprendizsController {
     try {
       const { email, password } = request.only(['email', 'password'])
 
-      const aprendizExist = await Aprendiz.query().where('email', email).preload('perfil').first()
+      const aprendizExist = await Aprendiz.query()
+        .where('email', email)
+        .preload('perfil')
+        .preload('grupo')
+        .first()
 
-      if (!aprendizExist) return response.status(401).json({ message: 'Fallo en la autenticación' })
+      if (!aprendizExist)
+        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
 
       const verifyPassword = await bcrypt.compare(password, aprendizExist.password)
 
       if (!verifyPassword)
-        return response.status(401).json({ message: 'Fallo en la autenticación' })
+        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
 
       return response.status(200).json({
+        success: true,
         message: 'Autenticado',
         data: {
           id: aprendizExist.idaprendiz,
           nombre: aprendizExist.nombres,
           apellidos: aprendizExist.apellidos,
           estado: aprendizExist.estado,
-          perfil: aprendizExist.perfil.perfil, // <-- accedes al nombre del perfil
+          perfil: aprendizExist.perfil.perfil,
+          jornada: aprendizExist.grupo?.jornada || null,
+          CentroFormacion: aprendizExist.centro_formacion_idcentro_formacion,
         },
       })
     } catch (e) {

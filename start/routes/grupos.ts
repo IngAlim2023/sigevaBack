@@ -1,5 +1,13 @@
-import GruposController from '#controllers/grupo_controller'
 import router from '@adonisjs/core/services/router'
-import GrupoController from 'App/Controllers/Http/GrupoController'
+import GrupoController from '#controllers/grupo_controller'
 
-router.post('/grupos/importar', GruposController.subirDesdeExcel)
+const grupoController = new GrupoController();
+
+router
+  .group(() => {
+    router.post('/crear', grupoController.crear)
+    router.get('/listar', grupoController.getAll)
+    router.get('/listar/:id', grupoController.getById)
+    router.put('/listar/:id', grupoController.actualizar)
+  })
+  .prefix('/api/grupo')

@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt'
 import Perfil from '#models/perfil'
 
 export default class UsuariosController {
-  async register({ request, response }: HttpContext) {
+  async crear({ request, response }: HttpContext) {
     try {
       const { email, password, estado, idperfil, idcentro_formacion } = request.body()
 
@@ -50,7 +50,7 @@ export default class UsuariosController {
         return response.status(401).json({ success: false, message: 'Contraseña incorrecta' })
       }
 
-      const perfil = await Perfil.findBy("idperfil", usuario.idperfil )
+      const perfil = await Perfil.findBy('idperfil', usuario.idperfil)
 
       return response.status(200).json({
         success: true,
@@ -59,7 +59,8 @@ export default class UsuariosController {
           id: usuario.idusuarios,
           email: usuario.email,
           estado: usuario.estado,
-          perfil: perfil?.perfil
+          perfil: perfil?.perfil,
+          centroFormacion: usuario.idcentro_formacion,
         }
       })
     } catch (error) {
@@ -71,7 +72,7 @@ export default class UsuariosController {
     }
   }
 
-  async update({ request, response, params }: HttpContext) {
+  async actualizar({ request, response, params }: HttpContext) {
     try {
       const id = params.id
       const usuario = await Usuario.find(id)

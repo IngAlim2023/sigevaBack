@@ -110,5 +110,23 @@ export default class EleccionControler {
         }
    }
 
+   async traerPorJornada({request, response}: HttpContext){
+    try{
+        const {jornada} = request.qs()
 
+        const elecciones = await Eleccione.query()
+        .preload('candidato', (candidatoQuery) => {
+            candidatoQuery.preload('aprendiz', (aprendizQuery) => {
+                aprendizQuery.preload('grupo', (grupoQuery) => {
+                    if(jornada){
+                        grupoQuery.where('jornada', jornada)
+                    }
+                })
+            })
+        })
+        return response.status(200).json({message: 'Elecciones filtradas por jornada', elecciones})
+    }catch(error){
+        return response.status(500).json({message: 'Error al obtener las eleccioness filtradas pro jornada', error: error.message})
+    }
+   }
 }
