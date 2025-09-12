@@ -1,13 +1,16 @@
 import router from '@adonisjs/core/services/router'
+import NivelFormacionController from '#controllers/niveles_formacion_controller';
+
+const nivelFormacionController = new NivelFormacionController;
 
 router
   .group(() => {
-    router.post('/', 'NivelFormacionController.crear')
+    router.post('/crear', nivelFormacionController.crear)
 
-    router.get('/', 'NivelFormacionController.getAll')
+    router.get('/listar', nivelFormacionController.getAll)
 
-    router.get('/:id', 'NivelFormacionController.getById')
+    router.get('/listar/:id', nivelFormacionController.getById)
 
-    router.put('/:id', 'NivelFormacionController.actualizar')
+    router.put('/actualizar/:id', nivelFormacionController.actualizar)
   })
-  .prefix('/nivel')
+  .prefix('/api/nivel')

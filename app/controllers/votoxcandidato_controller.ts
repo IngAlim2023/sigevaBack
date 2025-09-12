@@ -24,4 +24,14 @@ export default class VotoxcandidatoController {
         }
     }
 
+    async quantityVotes({ response, params }: HttpContext) {
+        const {id} =params
+        try{
+            const totalVotos = await Votoxcandidato.query().where('idcandidatos', id).count('* as total')
+            response.status(200).json({mensaje: "Éxito", votos: totalVotos[0].$extras.total})
+        }catch (error) {
+            return response.status(500).json({ mensaje: "Error", error: error.message })
+        }
+    }
+
 }

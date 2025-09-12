@@ -1,13 +1,16 @@
 /* eslint-disable @adonisjs/prefer-lazy-controller-import */
 /* eslint-disable prettier/prettier */
-import router from "@adonisjs/core/services/router";
+import router from "@adonisjs/core/services/router"
+import EleccionControler from "#controllers/eleccion_controller"
 
-import EleccionControler from "#controllers/eleccion_controller";
+const eleccion = new EleccionControler;
 
 
-router.get('/eleccion', [EleccionControler, 'traerEleccion'])
-router.get('/eleccion/centro/:idCentro_formacion', [EleccionControler, 'traerPorCentroFormacion'])
+router.get('/api/eleccion', eleccion.traerEleccion)
+router.get('/api/eleccionPorCentro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
 
-router.post('/crear/eleccion', [EleccionControler, 'crearEleccion'])
+router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)//Nueva para filtrar por gurpos
 
-router.put('/actualizar/eleccion/:idEleccion', [EleccionControler, 'actualizarEleccion'])
+router.post('/api/eleccion/crear', eleccion.crearEleccion)
+
+router.put('/api/eleccionActualizar/:idEleccion', eleccion.actualizarEleccion)

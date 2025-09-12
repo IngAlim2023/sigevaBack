@@ -31,7 +31,7 @@ export default class Candidatos extends BaseModel {
   declare idEleccion: number
 
   @belongsTo(() => Eleccione, {
-    foreignKey: 'idEleccion',
+    foreignKey: 'ideleccion',
   })
   declare eleccion: BelongsTo<typeof Eleccione>
 

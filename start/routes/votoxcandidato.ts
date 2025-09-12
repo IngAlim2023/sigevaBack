@@ -7,7 +7,8 @@ router
     .group(() => {
         
         router.get('/traer', [VotoxcandidatoController, 'getAll'])
-    }).prefix('/votoxcandidato')
+        router.get('/cantidad/:id', [VotoxcandidatoController, 'quantityVotes'])
+    }).prefix('/api/votoXCandidato')
 
 
-    router.post('/votoxcandidato/crear', [VotoxcandidatoController, 'crear']).use(middleware.handle)
+    router.post('/api/votoXCandidato/crear', [VotoxcandidatoController, 'crear']).use(middleware.handle)

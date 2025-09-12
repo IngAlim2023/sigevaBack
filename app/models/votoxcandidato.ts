@@ -9,7 +9,7 @@ export default class Votoxcandidato extends BaseModel {
   declare idvotoxcandidato: number
 
   @column()
-  declare idAprendiz: number
+  declare idaprendiz: number
   
   @column()
   declare contador: number
@@ -24,7 +24,7 @@ export default class Votoxcandidato extends BaseModel {
 
     
   @belongsTo(() => Aprendiz, {
-  foreignKey: 'idAprendiz',
+  foreignKey: 'idaprendiz',
 })
   declare aprendiz: BelongsTo<typeof Aprendiz>
 
