@@ -43,7 +43,7 @@ export default class Aprendiz extends BaseModel {
   @column()
   declare email: string
 
-  @column()
+  @column({ serializeAs: null })
   declare password: string
 
   // Relaciones

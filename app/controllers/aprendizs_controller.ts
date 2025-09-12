@@ -9,7 +9,7 @@ import db from '@adonisjs/lucid/services/db'
 import Perfil from '#models/perfil'
 //contraseña
 import bcrypt from 'bcrypt'
-import CentroFormacion from '#models/centro_formacion'
+
 export default class AprendizsController {
   async registro({ request, response }: HttpContext) {
     const trx = await db.transaction()
@@ -251,6 +251,42 @@ export default class AprendizsController {
       })
     } catch (e) {
       return response.status(500).json({ message: 'Error', error: e.message })
+    }
+  }
+  async aprendicesPorCentro({ params, request, response }: HttpContext) {
+    try {
+      const idCentro = Number(params.idCentro)
+      const { page = 1, perPage = 20, estado, search } = request.qs()
+
+      const query = Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', idCentro)
+        .preload('grupo')
+        .preload('programa')
+        .preload('perfil')
+
+      if (estado) {
+        query.where('estado', estado)
+      }
+
+      if (search) {
+        query.where((builder) => {
+          builder
+            .whereILike('nombres', `%${search}%`)
+            .orWhereILike('apellidos', `%${search}%`)
+            .orWhereILike('email', `%${search}%`)
+            .orWhere('numero_documento', search)
+        })
+      }
+
+      const result = await query.orderBy('apellidos', 'asc').paginate(Number(page), Number(perPage))
+      const { data } = result.toJSON()
+      return response.ok(data)
+    } catch (error) {
+      console.error('Error al traer aprendices por centro:', error)
+      return response.status(500).json({
+        message: 'Error al traer aprendices por centro de formación',
+        error: error.message,
+      })
     }
   }
 }

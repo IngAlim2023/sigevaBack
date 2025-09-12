@@ -10,6 +10,8 @@ router
 
     // Traer todos los aprendices
     router.get('/listar', aprendizsController.traer)
+    // start/routes.ts
+    router.get('/centros/:idCentro/', aprendizsController.aprendicesPorCentro)
 
     // Actualizar aprendiz por id
     router.put('/actualizar/:id', aprendizsController.actualizar)
