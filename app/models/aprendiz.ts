@@ -5,6 +5,7 @@ import Grupo from './grupo.js'
 import Candidatos from './candidatos.js'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Votoxcandidato from './votoxcandidato.js'
+import CentroFormacion from './centro_formacion.js'
 
 export default class Aprendiz extends BaseModel {
   public static table = 'aprendiz'
@@ -30,6 +31,8 @@ export default class Aprendiz extends BaseModel {
 
   @column()
   declare estado: string
+  @column()
+  declare centro_formacion_idcentro_formacion: number
 
   @column()
   declare tipo_documento: string
@@ -46,26 +49,37 @@ export default class Aprendiz extends BaseModel {
   // Relaciones
   @belongsTo(() => Grupo, {
     foreignKey: 'idgrupo',
+    localKey: 'idgrupo',
   })
   declare grupo: any
 
   @belongsTo(() => ProgramaFormacion, {
     foreignKey: 'idprograma_formacion',
+    localKey: 'idprograma_formacion',
   })
   declare programa: any
 
   @belongsTo(() => Perfil, {
     foreignKey: 'perfil_idperfil',
+    localKey: 'idperfil',
   })
   declare perfil: any
 
   @hasMany(() => Candidatos, {
-    foreignKey: 'idAprendiz',
+    foreignKey: 'idaprendiz',
+    localKey: 'idaprendiz',
   })
   declare candidatos: HasMany<typeof Candidatos>
 
   @hasMany(() => Votoxcandidato, {
-    foreignKey: 'idAprendiz',
+    foreignKey: 'idaprendiz',
+    localKey: 'idaprendiz',
   })
   declare voto: HasMany<typeof Votoxcandidato>
+
+  @belongsTo(() => CentroFormacion, {
+    foreignKey: 'centro_formacion_idcentro_formacion',
+    localKey: 'idcentro_formacion',
+  })
+  declare centro_formacion: any
 }
