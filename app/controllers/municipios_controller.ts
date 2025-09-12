@@ -3,7 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 export default class MunicipiosController {
 
-    async index({response}: HttpContext){
+    async conuslta({response}: HttpContext){
         try{
             const municipios = await Municipio.query().preload('municipio')
 

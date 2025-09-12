@@ -3,4 +3,4 @@ import router from "@adonisjs/core/services/router";
 
 const municipio = new MunicipiosController;
 
-router.get('/municipios', municipio.index)
+router.get('/api/municipios', municipio.conuslta)
