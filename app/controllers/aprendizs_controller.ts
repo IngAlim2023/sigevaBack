@@ -7,6 +7,7 @@ import ProgramaFormacion from '#models/programa_formacion'
 import NivelFormacion from '#models/nivel_formacion'
 import db from '@adonisjs/lucid/services/db'
 import Perfil from '#models/perfil'
+
 //contraseña
 import bcrypt from 'bcrypt'
 
@@ -34,6 +35,7 @@ export default class AprendizsController {
         'email',
         'password',
         'nivel_formacion',
+        'centro_formacion_idcentro_formacion',
       ])
 
       // Verificar si el email ya existe
@@ -107,6 +109,7 @@ export default class AprendizsController {
           password: hashedPassword,
           idgrupo: grupo.idgrupo,
           idprograma_formacion: programa.idprograma_formacion,
+          centro_formacion_idcentro_formacion: data.centro_formacion_idcentro_formacion,
         },
         { client: trx }
       )
