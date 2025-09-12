@@ -22,17 +22,17 @@ export default class ValidarVotoAnual {
      })
 
     // 3. Extraemos años en los que ya votó
-    const añosVotados = voticos.map((v) => {
+    const anioVotados = voticos.map((v) => {
       return v.candidato.eleccion.fecha_fin.getFullYear()
     })
 
     // 4. Año actual
-    const añoActual = new Date().getFullYear()
+    const anioActual = new Date().getFullYear()
 
     // 5. Validación
-    if (añosVotados.includes(añoActual)) {
+    if (anioVotados.includes(anioActual)) {
       return response.badRequest({
-        message: `Ya realizaste un voto en el año ${añoActual}`,
+        message: `Ya realizaste un voto en el año ${anioActual}`,
       })
     }
 
