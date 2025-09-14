@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable prettier/prettier */
 // eslint-disable-next-line prettier/prettier
 import type { HttpContext } from "@adonisjs/core/http";
 import Eleccione from "#models/eleccione";
 import EleccionService from "#services/EleccionesServices";
+import FiltrarService from "#services/FiltroJorElCen";
 
 const eleccionService = new EleccionService()
+const filtroElecciones = new FiltrarService()
 
 export default class EleccionControler {
 
@@ -137,6 +140,17 @@ export default class EleccionControler {
         return response.status(200).json({message: 'Elecciones filtradas por jornada', elecciones})
     }catch(error){
         return response.status(500).json({message: 'Error al obtener las eleccioness filtradas pro jornada', error: error.message})
+    }
+   }
+
+
+   async traerFiltrado({request, response}: HttpContext){
+    try{
+        const { idCentro_formacion, jornada} = request.qs()
+        const eleccionesFiltradas = await filtroElecciones.filtroElecciones(idCentro_formacion, jornada)
+        return response.status(200).json({message: 'Elecciones activas filtradas por jornada y centro formacion exitosamente', eleccionesFiltradas})
+    }catch(error){
+        return response.status(500).json({ message: 'Error al filtrar elecciones', error: error.message })
     }
    }
 }
