@@ -7,6 +7,7 @@ const eleccion = new EleccionControler;
 
 
 router.get('/api/eleccion', eleccion.traerEleccion)
+router.get('/api/eleccion/activas', eleccion.traerEleccionesActivas)
 router.get('/api/eleccionPorCentro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
 
 router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)//Nueva para filtrar por gurpos
