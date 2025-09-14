@@ -1,6 +1,6 @@
 import VotoxcandidatoController from "#controllers/votoxcandidato_controller";
 import router from "@adonisjs/core/services/router";
-import ValidarVotoAnual from "#middleware/validarVotoAnual";
+import ValidarVotoAnual from "#middleware/validarVoto";
 
 const middleware=new ValidarVotoAnual()
 router

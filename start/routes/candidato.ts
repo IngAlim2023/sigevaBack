@@ -9,4 +9,4 @@ router
     router.delete('/eliminar/:id', [CandidatosController, 'delete'])
     router.get('/listar', [CandidatosController, 'show'])
   })
-  .prefix('api/candidatos')
+  .prefix('api/candidatogit s')
