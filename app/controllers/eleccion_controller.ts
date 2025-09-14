@@ -2,8 +2,9 @@
 // eslint-disable-next-line prettier/prettier
 import type { HttpContext } from "@adonisjs/core/http";
 import Eleccione from "#models/eleccione";
+import EleccionService from "#services/EleccionesServices";
 
-
+const eleccionService = new EleccionService()
 
 export default class EleccionControler {
 
@@ -14,6 +15,15 @@ export default class EleccionControler {
         }catch(error){
             return response.status(500).json({message: 'Error al obtener las elecciones', error: error.message})
         }
+    }
+
+    async traerEleccionesActivas({response}: HttpContext){
+      try{
+        const eleccionesActivas = await eleccionService.eleccionesAactivas()
+        return response.status(200).json({message: 'Elecciones Activas traidas con exito', eleccionesActivas})
+      }catch(error){
+        return response.status(500).json({message: 'Error en obtener las elecciones activas'})
+      }
     }
 
     async crearEleccion({request, response}:HttpContext){
