@@ -1,4 +1,5 @@
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { DateTime } from 'luxon'
 import NivelFormacion from './nivel_formacion.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Aprendiz from './aprendiz.js'
@@ -26,6 +27,12 @@ export default class ProgramaFormacion extends BaseModel {
 
   @column()
   declare idnivel_formacion: number
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 
   @belongsTo(() => NivelFormacion, {
     foreignKey: 'idnivel_formacion',
