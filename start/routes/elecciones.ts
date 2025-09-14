@@ -10,7 +10,9 @@ router.get('/api/eleccion', eleccion.traerEleccion)
 router.get('/api/eleccion/activas', eleccion.traerEleccionesActivas)
 router.get('/api/eleccionPorCentro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
 
-router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)//Nueva para filtrar por gurpos
+router.get('/api/eleccion/traerFiltro', eleccion.traerFiltrado) //Nueva para filtrar por jornada centro formacion candidatos
+
+router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)
 
 router.post('/api/eleccion/crear', eleccion.crearEleccion)
 
