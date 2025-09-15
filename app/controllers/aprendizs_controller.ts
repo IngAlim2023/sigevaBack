@@ -237,6 +237,7 @@ export default class AprendizsController {
         .where('email', email)
         .preload('perfil')
         .preload('grupo')
+        .preload('programa')
         .first()
 
       if (!aprendizExist)
@@ -257,6 +258,7 @@ export default class AprendizsController {
           estado: aprendizExist.estado,
           perfil: aprendizExist.perfil.perfil,
           jornada: aprendizExist.grupo?.jornada || null,
+          programa: aprendizExist.programa?.programa || null,
           CentroFormacion: aprendizExist.centro_formacion_idcentro_formacion,
         },
       })
