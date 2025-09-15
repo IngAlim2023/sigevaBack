@@ -32,7 +32,7 @@ export default class EleccionControler {
     async crearEleccion({request, response}:HttpContext){
         try{
             const dataEleccion = request.only([
-                'idCentro_formacion',
+                'idcentro_formacion',
                 'fecha_inicio',
                 'fecha_fin',
                 'hora_inicio',
@@ -40,7 +40,7 @@ export default class EleccionControler {
                 'nombre'
             ])
 
-            if(!dataEleccion.idCentro_formacion){
+            if(!dataEleccion.idcentro_formacion){
                 return response.status(400).json({message: 'El campo del centro de formacion es obligatorio'})
             }
 
