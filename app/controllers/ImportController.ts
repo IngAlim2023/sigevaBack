@@ -85,13 +85,16 @@ export default class ImportExcelController {
 
       const data: any[] = XLSX.utils.sheet_to_json(sheet, { range: 4, defval: '' })
 
-      // 4) Catálogos base
-      // Perfil "Aprendiz"
-      let perfil = await Perfil.query().where('perfil', 'Aprendiz').first()
+      //no puede se puede repetir un perfil , errorsito corregido
+      // Perfil "Aprendiz" debe existir previamente en la tabla
+      const perfil = await Perfil.query().whereRaw('LOWER(perfil) = LOWER(?)', ['aprendiz']).first()
+
       if (!perfil) {
-        perfil = new Perfil()
-        perfil.perfil = 'Aprendiz'
-        await perfil.useTransaction(trx).save()
+        await trx.rollback()
+        return response.status(500).json({
+          success: false,
+          message: 'El perfil "Aprendiz" no existe. Debes inicializar los perfiles en la BD',
+        })
       }
 
       // Nivel "Técnico"

@@ -1,4 +1,5 @@
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { DateTime } from 'luxon'
 import Candidatos from './candidatos.js'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import Aprendiz from './aprendiz.js'
@@ -16,6 +17,12 @@ export default class Votoxcandidato extends BaseModel {
 
   @column()
   declare idcandidatos: number
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
     
   @belongsTo(() => Candidatos, {
   foreignKey: 'idcandidatos',
