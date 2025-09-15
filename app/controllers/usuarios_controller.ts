@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt'
 import Perfil from '#models/perfil'
 
 export default class UsuariosController {
+  
   async crear({ request, response }: HttpContext) {
     try {
       const { email, password, estado, idperfil, idcentro_formacion } = request.body()
@@ -108,6 +109,34 @@ export default class UsuariosController {
         success: false,
         message: 'Error interno al actualizar usuario',
         error: error.message
+      })
+    }
+  }
+    async listarFuncionarios({ response }: HttpContext) {
+    try {
+      const funcionarios:any = await Usuario.query()
+        .preload('perfil')
+        .preload('centro')
+        .whereHas('perfil', (query) => {
+          query.where('perfil', 'Funcionario') 
+        })
+
+      return response.status(200).json({
+        success: true,
+        message: 'Funcionarios listados correctamente',
+        data: funcionarios.map((f:any) => ({
+          id: f.idusuarios,
+          email: f.email,
+          estado: f.estado,
+          perfil: f.perfil?.perfil,
+          centroFormacion: f.centro?.nombre, // ajusta según tu tabla centro_formacion
+        })),
+      })
+    } catch (error) {
+      return response.status(500).json({
+        success: false,
+        message: 'Error al listar funcionarios',
+        error: error.message,
       })
     }
   }
