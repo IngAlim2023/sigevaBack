@@ -78,7 +78,7 @@ export default class EleccionControler {
             }
 
             const dataEleccion = request.only([
-                'idCentro_formacion',
+                'idcentro_formacion',
                 'fecha_inicio',
                 'fecha_fin',
                 'hora_inicio',
@@ -113,12 +113,23 @@ export default class EleccionControler {
         }
         
     }
-
    async traerPorCentroFormacion({response, params}:HttpContext){
         try {
-            const eleccion = await Eleccione.query().where('idCentro_formacion', params.idCentro_formacion)
-            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', eleccion})
+            const elecciones = await Eleccione.query()
+                .where('idcentro_formacion', params.idCentro_formacion)
+                .preload('centro') 
+                .preload('candidato', (candidatoQuery) => {  
+                    candidatoQuery.preload('aprendiz', (aprendizQuery) => {
+                    aprendizQuery
+                        .preload('grupo')     
+                        .preload('programa')  
+                    })
+                })
+
+                
+            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', elecciones})
         } catch (error) {
+            console.log(error)
             return response.status(500).json({message: 'Error al obtner las elecciones por centro de formacion'})
         }
    }
