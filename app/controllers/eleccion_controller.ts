@@ -126,18 +126,25 @@ export default class EleccionControler {
                     })
                 })
             const hoy=new Date()
-            const fechaFin=new Date(elecciones[0].fecha_fin)
-            const fechaInicio=new Date(elecciones[0].fecha_inicio)
            
-
-            
             let eleccionesActivas: any[] = []
 
-            if(hoy >= fechaInicio && hoy <= fechaFin){
-                eleccionesActivas=[{ideleccion:elecciones[0].ideleccion,titulo:elecciones[0].nombre, centro:elecciones[0].centro.centro_formacioncol,
-                    jornada:elecciones[0].candidato[0].aprendiz.grupo.jornada
-                }]
-            }
+            elecciones.forEach((eleccion) => {
+                const fechaInicio = new Date(eleccion.fecha_inicio)
+                const fechaFin = new Date(eleccion.fecha_fin)
+
+                if (hoy >= fechaInicio && hoy <= fechaFin) {
+                    const primerCandidato = eleccion.candidato[0]
+
+                    eleccionesActivas.push({
+                    ideleccion: eleccion.ideleccion,
+                    titulo: eleccion.nombre,
+                    centro: eleccion.centro.centro_formacioncol,
+                    jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null
+                    })
+                }
+                })
+            
                 
             return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', eleccionesActivas})
         } catch (error) {
