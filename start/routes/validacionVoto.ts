@@ -11,5 +11,5 @@ router.get('/api/validaciones/:id', validacionVotoController.show)
 
 // SISTEMA DE VOTACIÓN CON OTP
 // Generar OTP para votar
-router.post('/api/validaciones/generar-otp', validacionVotoController.generarOtp)
-router.post('/api/validaciones/validar-otp', validacionVotoController.validarOtp)
+router.post('/api/validaciones/generarOtp', validacionVotoController.generarOtp)
+router.post('/api/validaciones/validarOtp', validacionVotoController.validarOtp)
