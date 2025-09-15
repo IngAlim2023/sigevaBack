@@ -38,7 +38,7 @@ export default class Eleccione extends BaseModel {
   declare updatedAt: DateTime
 
   @belongsTo(() => CentroFormacion, {
-  foreignKey: 'idcentro_formacion',
+    foreignKey: 'idCentro_formacion',
   })
   declare centro: BelongsTo<typeof CentroFormacion>
 

@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import Eleccione from './eleccione.js';
 export default class ValidacionVoto extends BaseModel {
+  static table = 'validacionvoto'
   @column({ isPrimary: true })
   declare id: number
 
@@ -10,10 +11,16 @@ export default class ValidacionVoto extends BaseModel {
   declare codigo: string
 
   @column()
-  declare aprendiz_idAprendiz: number 
+  declare aprendiz_idaprendiz: number 
 
   @column()
-  declare elecciones_idEleccion: number 
+  declare elecciones_ideleccion: number 
+
+  @column.dateTime()
+  declare otp_expira_en: DateTime | null
+
+  @column()
+  declare candidato_id: number | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -24,12 +31,12 @@ export default class ValidacionVoto extends BaseModel {
   //relaciones
 
   @belongsTo(() => Aprendiz, {
-    foreignKey: 'aprendiz_idAprendiz'
+    foreignKey: 'aprendiz_idaprendiz'
   })
   declare aprendiz: any
 
   @belongsTo(() => Eleccione, {
-    foreignKey: 'elecciones_idEleccion'
+    foreignKey: 'elecciones_ideleccion'
   })
   declare eleccion: any
 }

@@ -37,7 +37,6 @@ export default class CandidatosService {
 
       const candidato = await Candidatos.create(
         {
-          nombres: data.nombres,
           ideleccion: data.ideleccion,
           idaprendiz: data.idaprendiz,
           propuesta: data.propuesta,
