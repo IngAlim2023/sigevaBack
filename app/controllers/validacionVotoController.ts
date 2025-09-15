@@ -149,10 +149,11 @@ export default class ValidacionVotoController {
         .where('ideleccion', data.elecciones_ideleccion)
         .count('* as total')
 
-      // 6. Verificar que el aprendiz no haya votado ya en esta elección
+      // 6. Verificar que el aprendiz no haya completado ya su voto en esta elección
       const yaVoto = await ValidacionVoto.query()
         .where('aprendiz_idaprendiz', data.aprendiz_idaprendiz)
         .where('elecciones_ideleccion', data.elecciones_ideleccion)
+        .where('codigo', 'like', 'VOTED_%') // Solo códigos que indican voto completado
         .first()
 
       if (yaVoto) {
@@ -166,17 +167,27 @@ export default class ValidacionVotoController {
         })
       }
 
+      // 6.1. Limpiar OTPs expirados o no utilizados del mismo usuario
+      const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
+      const tiempoLimite = DateTime.now().minus({ minutes: expirationMinutes })
+      
+      await ValidacionVoto.query()
+        .where('aprendiz_idaprendiz', data.aprendiz_idaprendiz)
+        .where('elecciones_ideleccion', data.elecciones_ideleccion)
+        .where('created_at', '<', tiempoLimite.toSQL())
+        .where('codigo', 'not like', 'VOTED_%')
+        .where('codigo', 'not like', 'USED_%')
+        .delete()
+
       // 7. Generar código OTP único
       const otpCode = nanoid(6).toUpperCase() // Código de 6 caracteres
-      
-      // 8. Configurar tiempo de expiración (usaremos created_at + minutos)
-      const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
 
-      // Crear registro temporal de validación con OTP
+      // Crear registro temporal de validación con OTP (SIN candidato_id aún)
       await ValidacionVoto.create({
-        codigo: `OTP_${otpCode}`,
+        codigo: `${otpCode}`,
         aprendiz_idaprendiz: data.aprendiz_idaprendiz,
-        elecciones_ideleccion: data.elecciones_ideleccion
+        elecciones_ideleccion: data.elecciones_ideleccion,
+
       })
 
       // 9. Enviar email con OTP
@@ -256,27 +267,26 @@ export default class ValidacionVotoController {
    */
   async validarOtp({ request, response }: HttpContext) {
     try {
+      console.log('📥 Datos recibidos para validación OTP:', request.body())
+      
       const validator = vine.compile(
         vine.object({
-          codigo_otp: vine.string().minLength(6).maxLength(6),
-          aprendiz_idaprendiz: vine.number().positive(),
-          elecciones_ideleccion: vine.number().positive()
+          codigo_otp: vine.string().minLength(6).maxLength(6)
         })
       )
 
       const data = await request.validateUsing(validator)
+      console.log('✅ Datos validados:', data)
 
-      // 1. Buscar la validación temporal con el OTP
+      // 1. Buscar la validación temporal solo con el código OTP
       const validacionTemporal = await ValidacionVoto.query()
-        .where('codigo', `OTP_${data.codigo_otp}`)
-        .where('aprendiz_idaprendiz', data.aprendiz_idaprendiz)
-        .where('elecciones_ideleccion', data.elecciones_ideleccion)
+        .where('codigo', data.codigo_otp)
         .first()
 
       if (!validacionTemporal) {
-        return response.status(400).json({
-          message: 'Código OTP inválido o no coincide',
-          codigo_error: 'OTP_INVALIDO'
+        return response.status(200).json({
+          success: false,
+          message: 'Código OTP, aprendiz o elección no coinciden'
         })
       }
 
@@ -289,15 +299,9 @@ export default class ValidacionVotoController {
         // Eliminar OTP expirado
         await validacionTemporal.delete()
         
-        return response.status(400).json({
-          message: 'El código OTP ya expiró. Solicita uno nuevo.',
-          codigo_error: 'OTP_EXPIRADO',
-          detalles: {
-            creado_en: validacionTemporal.createdAt.toISO(),
-            expiro_en: tiempoExpiracion.toISO(),
-            tiempo_actual: tiempoActual.toISO(),
-            minutos_expiracion: expirationMinutes
-          }
+        return response.status(200).json({
+          success: false,
+          message: 'El código OTP ya expiró. Solicita uno nuevo.'
         })
       }
 
@@ -306,19 +310,29 @@ export default class ValidacionVotoController {
         codigo: `USED_${data.codigo_otp}` // Marcar como usado
       }).save()
 
-
       return response.status(200).json({
+        success: true,
         message: 'Código OTP validado correctamente',
         data: {
-          otp_validado: true,
-          aprendiz_id: data.aprendiz_idaprendiz,
-          eleccion_id: data.elecciones_ideleccion,
-          mensaje: 'Ahora puedes proceder a votar usando el endpoint de votación'
+          aprendiz_id: validacionTemporal.aprendiz_idaprendiz,
+          eleccion_id: validacionTemporal.elecciones_ideleccion
         }
       })
 
     } catch (error) {
+      console.error('❌ Error en validación OTP:', error)
+      
+      // Si es error de validación, devolver detalles específicos
+      if (error.messages) {
+        return response.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: error.messages
+        })
+      }
+      
       return response.status(500).json({
+        success: false,
         message: 'Error al validar el código OTP',
         error: error.message
       })
