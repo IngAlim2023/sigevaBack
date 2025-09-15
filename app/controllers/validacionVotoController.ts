@@ -67,8 +67,7 @@ export default class ValidacionVotoController {
       const validator = vine.compile(
         vine.object({
           aprendiz_idaprendiz: vine.number().positive(),
-          elecciones_ideleccion: vine.number().positive(),
-          candidato_id: vine.number().positive()
+          elecciones_ideleccion: vine.number().positive()
         })
       )
 
@@ -137,27 +136,18 @@ export default class ValidacionVotoController {
       }
 
       // 4. Verificar que pertenecen al mismo centro de formación
-      if (aprendiz.centro_formacion_idcentro_formacion !== eleccion.idCentro_formacion) {
+      if (aprendiz.centro_formacion_idcentro_formacion !== eleccion.idcentro_formacion) {
         return response.status(400).json({
           message: 'El aprendiz y la elección deben pertenecer al mismo centro de formación',
           codigo_error: 'CENTRO_FORMACION_DIFERENTE'
         })
       }
 
-      // 5. Verificar que el candidato existe y pertenece a esta elección
-      const candidato = await (await import('#models/candidatos')).default
+      // 5. Contar candidatos en la elección para información
+      const totalCandidatos = await (await import('#models/candidatos')).default
         .query()
-        .where('idcandidatos', data.candidato_id)
         .where('ideleccion', data.elecciones_ideleccion)
-        .preload('aprendiz')
-        .first()
-
-      if (!candidato) {
-        return response.status(404).json({
-          message: 'El candidato no existe o no pertenece a esta elección',
-          codigo_error: 'CANDIDATO_NO_ENCONTRADO'
-        })
-      }
+        .count('* as total')
 
       // 6. Verificar que el aprendiz no haya votado ya en esta elección
       const yaVoto = await ValidacionVoto.query()
@@ -177,19 +167,16 @@ export default class ValidacionVotoController {
       }
 
       // 7. Generar código OTP único
-      const otpCode = nanoid(6).toUpperCase() // Código de 8 caracteres
+      const otpCode = nanoid(6).toUpperCase() // Código de 6 caracteres
       
-      // 8. Calcular tiempo de expiración (5 minutos desde .env)
+      // 8. Configurar tiempo de expiración (usaremos created_at + minutos)
       const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
-      const otpExpiration = DateTime.now().plus({ minutes: expirationMinutes })
 
-      // Crear registro temporal de validación con OTP (SIN candidato_id aún)
+      // Crear registro temporal de validación con OTP
       await ValidacionVoto.create({
         codigo: `OTP_${otpCode}`,
         aprendiz_idaprendiz: data.aprendiz_idaprendiz,
-        elecciones_ideleccion: data.elecciones_ideleccion,
-        candidato_id: null, // No asignar candidato hasta validar OTP
-        otp_expira_en: otpExpiration
+        elecciones_ideleccion: data.elecciones_ideleccion
       })
 
       // 9. Enviar email con OTP
@@ -229,24 +216,31 @@ export default class ValidacionVotoController {
         // No fallar la operación si el email falla, pero registrar el error
       }
 
+      // Respuesta base
+      const responseData: any = {
+        otp_generado: true,
+        email_enviado_a: aprendiz.email,
+        expira_en_minutos: expirationMinutes,
+        eleccion: {
+          nombre: eleccion.nombre,
+          centro: eleccion.centro?.centro_formacioncol,
+          total_candidatos: totalCandidatos[0]?.$extras?.total || 0
+        },
+        aprendiz: {
+          nombre: `${aprendiz.nombres} ${aprendiz.apellidos}`,
+          centro: aprendiz.centro_formacion?.centro_formacioncol
+        }
+      }
+
+      // Solo incluir OTP en desarrollo (NODE_ENV !== 'production')
+      if (process.env.NODE_ENV !== 'production') {
+        responseData.codigo_otp_temporal = otpCode
+        responseData._desarrollo_nota = "El código OTP se incluye solo en desarrollo. En producción, obtenerlo del email."
+      }
+
       return response.status(200).json({
         message: 'Código OTP generado exitosamente',
-        data: {
-          otp_generado: true,
-          email_enviado_a: aprendiz.email,
-          expira_en_minutos: expirationMinutes,
-          candidato: {
-            nombre: `${candidato.aprendiz.nombres} ${candidato.aprendiz.apellidos}`,
-            numero_tarjeton: candidato.numero_tarjeton,
-            propuesta: candidato.propuesta
-          },
-          eleccion: {
-            nombre: eleccion.nombre,
-            centro: eleccion.centro?.centro_formacioncol
-          },
-          // TEMPORAL: Solo para desarrollo, remover en producción
-          codigo_otp_temporal: otpCode
-        }
+        data: responseData
       })
 
     } catch (error) {
@@ -286,10 +280,12 @@ export default class ValidacionVotoController {
         })
       }
 
-      // 2. Verificar que el OTP no haya expirado
+      // 2. Verificar que el OTP no haya expirado (usando created_at)
       const tiempoActual = DateTime.now()
+      const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
+      const tiempoExpiracion = validacionTemporal.createdAt.plus({ minutes: expirationMinutes })
       
-      if (validacionTemporal.otp_expira_en && tiempoActual > validacionTemporal.otp_expira_en) {
+      if (tiempoActual > tiempoExpiracion) {
         // Eliminar OTP expirado
         await validacionTemporal.delete()
         
@@ -297,8 +293,10 @@ export default class ValidacionVotoController {
           message: 'El código OTP ya expiró. Solicita uno nuevo.',
           codigo_error: 'OTP_EXPIRADO',
           detalles: {
-            expiro_en: validacionTemporal.otp_expira_en.toISO(),
-            tiempo_actual: tiempoActual.toISO()
+            creado_en: validacionTemporal.createdAt.toISO(),
+            expiro_en: tiempoExpiracion.toISO(),
+            tiempo_actual: tiempoActual.toISO(),
+            minutos_expiracion: expirationMinutes
           }
         })
       }
