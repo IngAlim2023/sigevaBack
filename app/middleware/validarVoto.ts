@@ -26,7 +26,7 @@ export default class ValidarVotoUnico {
     const yaVoto = votoExistente.some((v) => v.candidato?.ideleccion === idEleccion)
 
     if (yaVoto) {
-      return response.badRequest({
+      return response.status(200).json({succes:false,
         message: `Ya realizaste un voto en esta elección.`,
       })
     }
