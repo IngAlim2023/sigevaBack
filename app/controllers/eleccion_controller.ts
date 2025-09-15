@@ -62,16 +62,7 @@ export default class EleccionControler {
                 return response.status(400).json({message: 'La Hora de inicio no debe ser mayor a la Hora fin'})
             }
 
-            const { DateTime } = await import('luxon')
-            
-            const eleccion = await Eleccione.create({
-                idCentro_formacion: dataEleccion.idCentro_formacion,
-                fecha_inicio: new Date(dataEleccion.fecha_inicio),
-                fecha_fin: new Date(dataEleccion.fecha_fin),
-                hora_inicio: DateTime.fromISO(`1970-01-01T${dataEleccion.hora_inicio}`),
-                hora_fin: DateTime.fromISO(`1970-01-01T${dataEleccion.hora_fin}`),
-                nombre: dataEleccion.nombre
-            })
+            const eleccion = await Eleccione.create(dataEleccion)
             return response.status(201).json({message: 'Eleccion creada con exito', eleccion })
         }
         catch(error){
