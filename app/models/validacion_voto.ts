@@ -16,12 +16,6 @@ export default class ValidacionVoto extends BaseModel {
   @column()
   declare elecciones_ideleccion: number 
 
-  @column.dateTime()
-  declare otp_expira_en: DateTime | null
-
-  @column()
-  declare candidato_id: number | null
-
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
