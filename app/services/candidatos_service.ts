@@ -7,12 +7,12 @@ type CreateCandidatoDTO = {
   ideleccion: number
   idaprendiz: number
   propuesta: string
-  numero_tarjeton: number
+  numero_tarjeton: string
   foto_url?: string | null
 }
 
 export default class CandidatosService {
-  static async checkDuplicateTarjeton(ideleccion: number, numero_tarjeton: number) {
+  static async checkDuplicateTarjeton(ideleccion: number, numero_tarjeton: string) {
     const exists = await Candidatos.query()
       .where('ideleccion', ideleccion)
       .andWhere('numero_tarjeton', numero_tarjeton)
@@ -58,6 +58,10 @@ export default class CandidatosService {
     const candidatos = await Candidatos.query()
       .where('ideleccion', ideleccion)
       .orderByRaw('RANDOM()')
+      .preload('aprendiz', (aprendiz) => {
+        aprendiz.preload('centro_formacion')
+      })
+
     return candidatos
   }
 

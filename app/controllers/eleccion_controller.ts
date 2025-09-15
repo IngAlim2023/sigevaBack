@@ -32,7 +32,7 @@ export default class EleccionControler {
     async crearEleccion({request, response}:HttpContext){
         try{
             const dataEleccion = request.only([
-                'idCentro_formacion',
+                'idcentro_formacion',
                 'fecha_inicio',
                 'fecha_fin',
                 'hora_inicio',
@@ -40,7 +40,7 @@ export default class EleccionControler {
                 'nombre'
             ])
 
-            if(!dataEleccion.idCentro_formacion){
+            if(!dataEleccion.idcentro_formacion){
                 return response.status(400).json({message: 'El campo del centro de formacion es obligatorio'})
             }
 
@@ -87,7 +87,7 @@ export default class EleccionControler {
             }
 
             const dataEleccion = request.only([
-                'idCentro_formacion',
+                'idcentro_formacion',
                 'fecha_inicio',
                 'fecha_fin',
                 'hora_inicio',
@@ -122,12 +122,42 @@ export default class EleccionControler {
         }
         
     }
-
    async traerPorCentroFormacion({response, params}:HttpContext){
         try {
-            const eleccion = await Eleccione.query().where('idCentro_formacion', params.idCentro_formacion)
-            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', eleccion})
+            const elecciones = await Eleccione.query()
+                .where('idcentro_formacion', params.idCentro_formacion)
+                .preload('centro') 
+                .preload('candidato', (candidatoQuery) => {  
+                    candidatoQuery.preload('aprendiz', (aprendizQuery) => {
+                    aprendizQuery
+                        .preload('grupo')     
+                        .preload('programa')  
+                    })
+                })
+            const hoy=new Date()
+           
+            let eleccionesActivas: any[] = []
+
+            elecciones.forEach((eleccion) => {
+                const fechaInicio = new Date(eleccion.fecha_inicio)
+                const fechaFin = new Date(eleccion.fecha_fin)
+
+                if (hoy >= fechaInicio && hoy <= fechaFin) {
+                    const primerCandidato = eleccion.candidato[0]
+
+                    eleccionesActivas.push({
+                    ideleccion: eleccion.ideleccion,
+                    titulo: eleccion.nombre,
+                    centro: eleccion.centro.centro_formacioncol,
+                    jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null
+                    })
+                }
+                })
+            
+                
+            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', eleccionesActivas})
         } catch (error) {
+            console.log(error)
             return response.status(500).json({message: 'Error al obtner las elecciones por centro de formacion'})
         }
    }

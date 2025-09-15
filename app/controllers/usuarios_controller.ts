@@ -111,4 +111,32 @@ export default class UsuariosController {
       })
     }
   }
+    async listarFuncionarios({ response }: HttpContext) {
+    try {
+      const funcionarios = await Usuario.query()
+        .preload('perfil')
+        .preload('centro')
+        .whereHas('perfil', (query) => {
+          query.where('perfil', 'Funcionario') 
+        })
+
+      return response.status(200).json({
+        success: true,
+        message: 'Funcionarios listados correctamente',
+        data: funcionarios.map((f:any) => ({
+          id: f.idusuarios,
+          email: f.email,
+          estado: f.estado,
+          perfil: f.perfil?.perfil,
+          centroFormacion: f.centro?.nombre, // ajusta según tu tabla centro_formacion
+        })),
+      })
+    } catch (error) {
+      return response.status(500).json({
+        success: false,
+        message: 'Error al listar funcionarios',
+        error: error.message,
+      })
+    }
+  }
 }

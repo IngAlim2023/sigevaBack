@@ -26,7 +26,7 @@ export default class Candidatos extends BaseModel {
   declare propuesta: string
 
   @column()
-  declare numero_tarjeton: number
+  declare numero_tarjeton: string
 
   @column()
   declare idEleccion: number
