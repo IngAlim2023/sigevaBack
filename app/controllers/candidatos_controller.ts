@@ -16,7 +16,7 @@ export default class CandidatosController {
     try {
       const candidato = await CandidatosService.createWithOptionalUpload(
         {
-          nombres: payload.nombres,
+          nombres: payload.nombres ?? 'Candidato',
           ideleccion: payload.ideleccion,
           idaprendiz: payload.idaprendiz,
           propuesta: payload.propuesta,

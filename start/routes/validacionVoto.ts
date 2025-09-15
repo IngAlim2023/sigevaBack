@@ -4,10 +4,12 @@ import ValidacionVotoController from '#controllers/validacionVotoController'
 const validacionVotoController = new ValidacionVotoController()
 
 // Obtener todas las validaciones
-router.get('/validaciones', validacionVotoController.index)
-
-// Crear nueva validación
-router.post('/validaciones', validacionVotoController.store)
+router.get('/api/validaciones', validacionVotoController.index)
 
 // Obtener validación específica por ID
-router.get('/validaciones/:id', validacionVotoController.show)
+router.get('/api/validaciones/:id', validacionVotoController.show)
+
+// SISTEMA DE VOTACIÓN CON OTP
+// Generar OTP para votar
+router.post('/api/validaciones/generar-otp', validacionVotoController.generarOtp)
+router.post('/api/validaciones/validar-otp', validacionVotoController.validarOtp)
