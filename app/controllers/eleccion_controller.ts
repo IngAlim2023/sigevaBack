@@ -125,9 +125,21 @@ export default class EleccionControler {
                         .preload('programa')  
                     })
                 })
+            const hoy=new Date()
+            const fechaFin=new Date(elecciones[0].fecha_fin)
+            const fechaInicio=new Date(elecciones[0].fecha_inicio)
+           
 
+            
+            let eleccionesActivas: any[] = []
+
+            if(hoy >= fechaInicio && hoy <= fechaFin){
+                eleccionesActivas=[{ideleccion:elecciones[0].ideleccion,titulo:elecciones[0].nombre, centro:elecciones[0].centro.centro_formacioncol,
+                    jornada:elecciones[0].candidato[0].aprendiz.grupo.jornada
+                }]
+            }
                 
-            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', elecciones})
+            return response.status(200).json({message: 'Elecciones por centros de formacion traidos correctamente', eleccionesActivas})
         } catch (error) {
             console.log(error)
             return response.status(500).json({message: 'Error al obtner las elecciones por centro de formacion'})
