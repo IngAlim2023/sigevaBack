@@ -89,9 +89,14 @@ export default class AprendizsController {
 
       // Hashear contraseña
       const hashedPassword = await bcrypt.hash(data.password, 10)
-      let perfilaprendiz = await Perfil.query({ client: trx }).where('perfil', 'aprendiz').first()
+      const perfilaprendiz = await Perfil.query({ client: trx })
+        .where('perfil', 'Aprendiz') // errorsito corregido
+        .first()
       if (!perfilaprendiz) {
-        perfilaprendiz = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
+        await trx.rollback()
+        return response.status(500).json({
+          message: 'El perfil "Aprendiz" no existe, Debes crearlo antes en la base de datos',
+        })
       }
 
       // Crear aprendiz solo con sus campos
