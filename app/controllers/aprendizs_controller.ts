@@ -137,7 +137,10 @@ export default class AprendizsController {
 
   async traer({ response }: HttpContext) {
     try {
-      const aprendices = await Aprendiz.all()
+      const aprendices = await Aprendiz.query()
+      .preload('centro_formacion', (cf) => cf.select(['centro_formacioncol']))
+      .preload('programa', (p) => p.select(['programa']))
+      .preload('grupo', (g)=> g.select(['grupo']))
       return response.ok(aprendices)
     } catch (error) {
       return response.status(500).send({
