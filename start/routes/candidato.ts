@@ -8,5 +8,9 @@ router
     router.put('/actualizar/:id', [CandidatosController, 'update'])
     router.delete('/eliminar/:id', [CandidatosController, 'delete'])
     router.get('/listar', [CandidatosController, 'show'])
+    router.get('/listar/cformacion/:idcentro_formacion', [
+      CandidatosController,
+      'getbycentroformacion',
+    ])
   })
   .prefix('api/candidatos')

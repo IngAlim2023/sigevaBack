@@ -56,11 +56,13 @@
     "@adonisjs/core": "^6.18.0",
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/lucid": "^21.8.0",
+    "@adonisjs/mail": "^9.2.2",
     "@vinejs/vine": "^3.0.1",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "luxon": "^3.7.2",
     "multer": "^2.0.2",
+    "nanoid": "^5.1.5",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "xlsx": "^0.18.5"

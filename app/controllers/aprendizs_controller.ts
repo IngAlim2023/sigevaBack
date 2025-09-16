@@ -7,9 +7,10 @@ import ProgramaFormacion from '#models/programa_formacion'
 import NivelFormacion from '#models/nivel_formacion'
 import db from '@adonisjs/lucid/services/db'
 import Perfil from '#models/perfil'
+
 //contraseña
 import bcrypt from 'bcrypt'
-import CentroFormacion from '#models/centro_formacion'
+
 export default class AprendizsController {
   async registro({ request, response }: HttpContext) {
     const trx = await db.transaction()
@@ -34,6 +35,7 @@ export default class AprendizsController {
         'email',
         'password',
         'nivel_formacion',
+        'centro_formacion_idcentro_formacion',
       ])
 
       // Verificar si el email ya existe
@@ -87,9 +89,14 @@ export default class AprendizsController {
 
       // Hashear contraseña
       const hashedPassword = await bcrypt.hash(data.password, 10)
-      let perfilaprendiz = await Perfil.query({ client: trx }).where('perfil', 'aprendiz').first()
+      const perfilaprendiz = await Perfil.query({ client: trx })
+        .where('perfil', 'Aprendiz') // errorsito corregido
+        .first()
       if (!perfilaprendiz) {
-        perfilaprendiz = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
+        await trx.rollback()
+        return response.status(500).json({
+          message: 'El perfil "Aprendiz" no existe, Debes crearlo antes en la base de datos',
+        })
       }
 
       // Crear aprendiz solo con sus campos
@@ -107,6 +114,7 @@ export default class AprendizsController {
           password: hashedPassword,
           idgrupo: grupo.idgrupo,
           idprograma_formacion: programa.idprograma_formacion,
+          centro_formacion_idcentro_formacion: data.centro_formacion_idcentro_formacion,
         },
         { client: trx }
       )
@@ -129,7 +137,10 @@ export default class AprendizsController {
 
   async traer({ response }: HttpContext) {
     try {
-      const aprendices = await Aprendiz.all()
+      const aprendices = await Aprendiz.query()
+      .preload('centro_formacion', (cf) => cf.select(['centro_formacioncol']))
+      .preload('programa', (p) => p.select(['programa']))
+      .preload('grupo', (g)=> g.select(['grupo']))
       return response.ok(aprendices)
     } catch (error) {
       return response.status(500).send({
@@ -226,6 +237,7 @@ export default class AprendizsController {
         .where('email', email)
         .preload('perfil')
         .preload('grupo')
+        .preload('programa')
         .first()
 
       if (!aprendizExist)
@@ -246,11 +258,48 @@ export default class AprendizsController {
           estado: aprendizExist.estado,
           perfil: aprendizExist.perfil.perfil,
           jornada: aprendizExist.grupo?.jornada || null,
+          programa: aprendizExist.programa?.programa || null,
           CentroFormacion: aprendizExist.centro_formacion_idcentro_formacion,
         },
       })
     } catch (e) {
       return response.status(500).json({ message: 'Error', error: e.message })
+    }
+  }
+  async aprendicesPorCentro({ params, request, response }: HttpContext) {
+    try {
+      const idCentro = Number(params.idCentro)
+      const { page = 1, perPage = 20, estado, search } = request.qs()
+
+      const query = Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', idCentro)
+        .preload('grupo')
+        .preload('programa')
+        .preload('perfil')
+
+      if (estado) {
+        query.where('estado', estado)
+      }
+
+      if (search) {
+        query.where((builder) => {
+          builder
+            .whereILike('nombres', `%${search}%`)
+            .orWhereILike('apellidos', `%${search}%`)
+            .orWhereILike('email', `%${search}%`)
+            .orWhere('numero_documento', search)
+        })
+      }
+
+      const result = await query.orderBy('apellidos', 'asc').paginate(Number(page), Number(perPage))
+      const { data } = result.toJSON()
+      return response.ok(data)
+    } catch (error) {
+      console.error('Error al traer aprendices por centro:', error)
+      return response.status(500).json({
+        message: 'Error al traer aprendices por centro de formación',
+        error: error.message,
+      })
     }
   }
 }

@@ -1,4 +1,5 @@
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { DateTime } from 'luxon'
 import ProgramaFormacion from './programa_formacion.js'
 import Perfil from './perfil.js'
 import Grupo from './grupo.js'
@@ -6,6 +7,7 @@ import Candidatos from './candidatos.js'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Votoxcandidato from './votoxcandidato.js'
 import CentroFormacion from './centro_formacion.js'
+import ValidacionVoto from './validacion_voto.js'
 
 export default class Aprendiz extends BaseModel {
   public static table = 'aprendiz'
@@ -43,8 +45,14 @@ export default class Aprendiz extends BaseModel {
   @column()
   declare email: string
 
-  @column()
+  @column({ serializeAs: null })
   declare password: string
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 
   // Relaciones
   @belongsTo(() => Grupo, {
@@ -82,4 +90,10 @@ export default class Aprendiz extends BaseModel {
     localKey: 'idcentro_formacion',
   })
   declare centro_formacion: any
+
+  @hasMany(() => ValidacionVoto, {
+    foreignKey: 'aprendiz_idAprendiz',
+    localKey: 'idaprendiz',
+  })
+  declare validaciones: HasMany<typeof ValidacionVoto>
 }
