@@ -8,6 +8,7 @@ const eleccion = new EleccionControler;
 
 router.get('/api/eleccion', eleccion.traerEleccion)
 router.get('/api/eleccionPorCentro/:idCentro_formacion', eleccion.traerPorCentroFormacion)
+router.get('/api/eleccion/activas', eleccion.traerEleccionesActivas)
 
 router.get('/api/eleccion/traerFiltro', eleccion.traerFiltrado)
 

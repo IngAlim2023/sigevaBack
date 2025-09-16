@@ -156,6 +156,8 @@ export default class EleccionControler {
           eleccionesActivas.push({
             ideleccion: eleccion.ideleccion,
             titulo: eleccion.nombre,
+            fechaInicio: eleccion.fecha_inicio,
+            fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
             jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
