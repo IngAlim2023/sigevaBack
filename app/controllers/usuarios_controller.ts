@@ -230,13 +230,15 @@ export default class UsuariosController {
         .preload('perfil')
         .whereHas('perfil', (query) => {
           query.where('perfil', 'Funcionario')
+        }).preload("centro", (c) => {
+          c.preload("regional")
         })
 
       return response.json(funcionarios.map(f => ({
         id: f.idusuarios,
         email: f.email,
         estado: f.estado,
-        idcentro_formacion: f.idcentro_formacion
+        centroFormacion: f.centro
       })))
     } catch (error) {
       return response.status(500).json({ error: 'Error al listar funcionarios' })
