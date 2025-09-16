@@ -54,6 +54,3 @@ export default class Eleccione extends BaseModel {
   declare validaciones: HasMany<typeof ValidacionVoto>
   
 }
-
-
-

@@ -37,6 +37,23 @@ export default class CandidatosController {
     }
   }
 
+  public async getbycentroformacion({ params, response }: HttpContext) {
+    try {
+      const { idcentro_formacion } = params
+      const candidatos = await CandidatosService.getCandidatoCentroFormacion(
+        Number(idcentro_formacion)
+      )
+      return response.ok({
+        message: 'Candidatos obtenidos correctamente',
+        data: candidatos,
+      })
+    } catch (error: any) {
+      return response.badRequest({
+        message: error?.message ?? 'Error al obtener candidatos',
+      })
+    }
+  }
+
   public async getByEleccion({ params, response }: HttpContext) {
     try {
       const ideleccion = Number(params.ideleccion)
