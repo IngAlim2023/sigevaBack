@@ -27,12 +27,29 @@ export default class CandidatosController {
       )
 
       return response.created({
-        message: 'Candidato registrado correctamente',
+        message: 'Candidato registrado exitosamente',
         data: candidato,
       })
     } catch (error: any) {
       return response.badRequest({
         message: error?.message ?? 'Error al registrar candidato',
+      })
+    }
+  }
+
+  public async getbycentroformacion({ params, response }: HttpContext) {
+    try {
+      const { idcentro_formacion } = params
+      const candidatos = await CandidatosService.getCandidatoCentroFormacion(
+        Number(idcentro_formacion)
+      )
+      return response.ok({
+        message: 'Candidatos obtenidos correctamente',
+        data: candidatos,
+      })
+    } catch (error: any) {
+      return response.badRequest({
+        message: error?.message ?? 'Error al obtener candidatos',
       })
     }
   }

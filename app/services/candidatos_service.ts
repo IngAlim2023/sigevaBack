@@ -65,6 +65,22 @@ export default class CandidatosService {
     return candidatos
   }
 
+  static async getCandidatoCentroFormacion(idcentroformacion: number) {
+    try {
+      const candidatos = await Candidatos.query()
+        .preload('aprendiz')
+        .preload('eleccion', (eleccionQuery) => {
+          eleccionQuery.where('idcentro_formacion', idcentroformacion)
+        })
+        .whereHas('eleccion', (eleccionQuery) => {
+          eleccionQuery.where('idcentro_formacion', idcentroformacion)
+        })
+      return candidatos
+    } catch (error) {
+      throw new Error('Error al obtener los candidatos por centro de formación')
+    }
+  }
+
   static async updateCandidatos(
     idcandidatos: number,
     data: Partial<CreateCandidatoDTO>,
