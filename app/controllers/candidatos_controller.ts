@@ -27,7 +27,7 @@ export default class CandidatosController {
       )
 
       return response.created({
-        message: 'Candidato registrado correctamente',
+        message: 'Candidato registrado exitosamente',
         data: candidato,
       })
     } catch (error: any) {
