@@ -3,7 +3,7 @@ import Votoxcandidato from '#models/votoxcandidato'
 
 
 
-export default class VotoxcandidatoController {
+export default class    VotoxcandidatoController {
 
     async crear({ request, response }: HttpContext) {
         try {
