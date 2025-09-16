@@ -80,6 +80,25 @@ export default class CentroFormacionController {
     }
   }
 
+
+  async obtenerPorRegional ({params, response}:HttpContext){
+    try{
+      const {regional} = params;
+
+      const data = await CentroFormacion.query().where('idregional', regional)
+
+
+      return response.status(200).json({message:'Exito', data})
+
+    }catch(error){
+      return response.status(500).json({
+        success: false,
+        message: 'Error al obtener el centro de formacion por regional',
+        error: error.message,
+      })
+    }
+  }
+
   // Actualizar centro de formación existente
   async actualiza({ request, response, params }: HttpContext) {
     try {
