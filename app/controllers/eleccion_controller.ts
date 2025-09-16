@@ -178,6 +178,48 @@ export default class EleccionControler {
     }
   }
 
+  async traerPorCentroFormacionTodas({ response, params }: HttpContext) {
+    try {
+      const elecciones = await Eleccione.query()
+        .where('idcentro_formacion', params.idcentro_formacion)
+        .preload('centro')
+        .preload('candidato', (candidatoQuery) => {
+          candidatoQuery.preload('aprendiz', (aprendizQuery) => {
+            aprendizQuery.preload('grupo').preload('programa')
+          })
+        })
+
+      let eleccionesActivas: any[] = []
+
+      elecciones.forEach((eleccion) => {
+          const primerCandidato = eleccion.candidato[0]
+
+          eleccionesActivas.push({
+            ideleccion: eleccion.ideleccion,
+            titulo: eleccion.nombre,
+            fechaInicio: eleccion.fecha_inicio,
+            fechaFin: eleccion.fecha_fin,
+            centro: eleccion.centro.centro_formacioncol,
+            jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
+          })
+
+      })
+
+      return response
+        .status(200)
+        .json({
+          message: 'Elecciones por centros de formacion traidos correctamente',
+          eleccionesActivas,
+        })
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json({ message: 'Error al obtner las elecciones por centro de formacion' })
+    }
+  }
+
+
   async traerPorJornada({ request, response }: HttpContext) {
     try {
       const { jornada } = request.qs()

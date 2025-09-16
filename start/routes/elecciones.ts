@@ -12,6 +12,8 @@ router.get('/api/eleccion/activas', eleccion.traerEleccionesActivas)
 
 router.get('/api/eleccion/traerFiltro', eleccion.traerFiltrado)
 
+router.get('/api/eleccion/traerTodas/:idcentro_formacion', eleccion.traerPorCentroFormacionTodas)
+
 router.get('/api/eleccionJornada/listar', eleccion.traerPorJornada)//para filtrar por grupos
 
 router.post('/api/eleccion/crear', eleccion.crearEleccion)
