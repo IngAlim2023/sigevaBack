@@ -1,12 +1,13 @@
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type  { BelongsTo } from '@adonisjs/lucid/types/relations'
-import { DateTime } from 'luxon'
 import CentroFormacion from './centro_formacion.js'
 import Perfil from './perfil.js'
 
 export default class Usuario extends BaseModel {
+  public static table = 'usuarios'  
+  public static timestamps = false  
 
-  @column({ isPrimary: true })
+  @column({ isPrimary: true, columnName: 'idusuarios' })
   declare idusuarios: number
 
   @column()
@@ -16,19 +17,13 @@ export default class Usuario extends BaseModel {
   declare password: string
 
   @column()
-  declare estado: "Activo" | "Inactivo"
+  declare estado: 'Activo' | 'Inactivo'
 
-  @column()
+  @column({ columnName: 'idperfil' })
   declare idperfil: number
 
-  @column()
+  @column({ columnName: 'idcentro_formacion' })
   declare idcentro_formacion: number
-
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
 
   @belongsTo(() => Perfil, {
     foreignKey: 'idperfil',
@@ -39,5 +34,4 @@ export default class Usuario extends BaseModel {
     foreignKey: 'idcentro_formacion',
   })
   declare centro: BelongsTo<typeof CentroFormacion>
-
 }
