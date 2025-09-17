@@ -13,3 +13,6 @@ import './routes/votoxcandidato.js'
 import './routes/reportes.js'
 import './routes/elecciones.js'
 import './routes/validacionVoto.js'
+
+// Importar configuración de Swagger
+import './swagger.js'
