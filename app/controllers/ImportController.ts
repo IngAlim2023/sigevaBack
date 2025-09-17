@@ -255,20 +255,19 @@ export default class ImportExcelController {
             numeroDocumento || email || Math.random().toString(36).slice(2, 10)
           const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
 
-          const aprendizNuevo: any = {
+          const aprendizNuevo = {
+            idgrupo: grupo.idgrupo,
+            idprograma_formacion: programa.idprograma_formacion,
             perfil_idperfil: perfil.idperfil,
-            tipo_documento: tipoDocumento,
-            numero_documento: numeroDocumento,
             nombres,
             apellidos,
             celular,
-            email,
             estado,
+            tipo_documento: tipoDocumento,
+            numero_documento: numeroDocumento,
+            email,
             password: hashedPassword,
-            idgrupo: grupo.idgrupo,
-            idprograma_formacion: programa.idprograma_formacion,
             centro_formacion_idcentro_formacion: centroFormacionId,
-            ...otrosCampos,
           }
 
           paraInsertar.push(aprendizNuevo)
@@ -296,7 +295,7 @@ export default class ImportExcelController {
       })
     } catch (error: any) {
       await trx.rollback()
-
+      console.error('Error en importarAprendices:', error) //  log completo
       return response.status(500).json({
         success: false,
         message: 'Error al importar aprendices',
