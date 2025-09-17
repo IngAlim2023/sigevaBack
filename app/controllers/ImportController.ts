@@ -9,6 +9,10 @@ import NivelFormacion from '#models/nivel_formacion'
 import db from '@adonisjs/lucid/services/db'
 import bcrypt from 'bcrypt'
 import XLSX from 'xlsx'
+import { nanoid } from 'nanoid'
+
+import ValidacionVoto from '#models/validacion_voto'
+import mail from '@adonisjs/mail/services/main'
 
 import Usuario from '#models/usuario'
 
@@ -294,6 +298,31 @@ export default class ImportExcelController {
             const model = new Aprendiz()
             model.merge(item)
             await model.useTransaction(trx).save()
+
+            const otpCode = nanoid(6).toUpperCase()
+
+            const validacion = new ValidacionVoto()
+            validacion.merge({
+              codigo: otpCode,
+              aprendiz_idaprendiz: model.idaprendiz,
+              elecciones_ideleccion: Number(request.input('eleccion_id')),
+            })
+            await validacion.useTransaction(trx).save()
+
+            try {
+              await mail.send((message) => {
+                message
+                  .to(model.email)
+                  .from(process.env.MAIL_FROM_ADDRESS || 'noreply@sigeva.com')
+                  .subject('Código OTP para Votación - SIGEVA').html(`
+          <h2>Hola ${model.nombres} ${model.apellidos}</h2>
+          <p>Tu código OTP para votar es: <strong>${otpCode}</strong></p>
+          <p>Este código expira en ${process.env.OTP_EXPIRATION_MINUTES || 5} minutos.</p>
+        `)
+              })
+            } catch (e) {
+              console.error(`Error enviando OTP a ${model.email}:`, e.message)
+            }
           }
         }
       }
@@ -319,188 +348,4 @@ export default class ImportExcelController {
   }
 
   // Dentro de ImportExcelController
-
-  async importarProgramas({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { Programa, CodigoPrograma, Version, Duracion, IdNivelFormacion, IdAreaTematica } =
-          fila
-
-        // Verificar si ya existe el programa
-        let programa = await ProgramaFormacion.query({ client: trx })
-          .where('codigo_programa', CodigoPrograma)
-          .first()
-        if (programa) continue // saltar si ya existe
-
-        // Crear programa
-        await ProgramaFormacion.create(
-          {
-            programa: Programa,
-            codigo_programa: CodigoPrograma,
-            version: Version,
-            duracion: Duracion,
-            idnivel_formacion: IdNivelFormacion,
-            idarea_tematica: IdAreaTematica,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Programas de formación importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar programas', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarGrupos({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { Grupo: nombreGrupo, Jornada } = fila
-
-        // Verificar si ya existe el grupo
-        let grupo = await Grupo.query({ client: trx }).where('grupo', nombreGrupo).first()
-        if (grupo) continue // saltar si ya existe
-
-        // Crear grupo
-        await Grupo.create(
-          {
-            grupo: nombreGrupo,
-            jornada: Jornada || null,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Grupos importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar grupos', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarNiveles({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { IdNivelFormacion, NivelFormacion: nombreNivel } = fila
-
-        // Verificar si ya existe el nivel
-        let nivel = await NivelFormacion.query({ client: trx })
-          .where('idnivel_formacion', IdNivelFormacion)
-          .first()
-        if (nivel) continue // saltar si ya existe
-
-        // Crear nivel de formación
-        await NivelFormacion.create(
-          {
-            idnivel_formacion: IdNivelFormacion,
-            nivel_formacion: nombreNivel,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Niveles de formación importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar niveles', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarPerfiles({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { IdPerfil, Perfil: nombrePerfil } = fila
-
-        // Verificar si ya existe el perfil
-        let perfilExist = await Perfil.query({ client: trx }).where('idperfil', IdPerfil).first()
-        if (perfilExist) continue // saltar si ya existe
-
-        // Crear perfil
-        await Perfil.create(
-          {
-            idperfil: IdPerfil,
-            perfil: nombrePerfil,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Perfiles importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar perfiles', error: error.message })
-    }
-  }
 }
