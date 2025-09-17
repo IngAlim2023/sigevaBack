@@ -251,7 +251,7 @@ export default class UsuariosController {
       return response.json(funcionarios.map(f => ({
         id: f.idusuarios,
         nombres: f.nombres,
-        apellidos: f.idusuarios,
+        apellidos: f.apellidos,
         celular: f.celular,
         numeroDocumento: f.numero_documento,
         email: f.email,
