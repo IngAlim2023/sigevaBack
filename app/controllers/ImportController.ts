@@ -216,14 +216,25 @@ export default class ImportExcelController {
         // normalizar y limpiar identificadores
         const numeroDocumentoRaw = (item.numeroDocumento || '').toString().trim()
         const numeroDocumento = numeroDocumentoRaw ? numeroDocumentoRaw.replace(/\s+/g, '') : ''
+
+        // 🔹 Normalizar email y eliminar caracteres invisibles
         const emailRaw = (item.email || '').toString().trim()
-        const email = emailRaw ? emailRaw.toLowerCase() : ''
+        const email = emailRaw ? emailRaw.toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '') : ''
+
+        // 🔹 Validar que haya email
+        if (!email) {
+          console.warn(`Fila ignorada por email vacío: ${fila['Nombre']} ${fila['Apellidos']}`)
+          continue
+        }
+
+        // 🔹 Normalizar estado
+        let estadoRaw = (fila['Estado'] || '').toString().trim().toLowerCase()
+        const estado = estadoRaw === '' ? 'activo' : estadoRaw
 
         const tipoDocumento = fila['Tipo de Documento'] || ''
         const nombres = fila['Nombre'] || ''
         const apellidos = fila['Apellidos'] || ''
         const celular = fila['Celular'] || ''
-        const estado = fila['Estado'] || ''
 
         // Construir otrosCampos filtrando claves invalidas (__EMPTY, '', null)
         const rawOtros: Record<string, any> = { ...fila }
@@ -257,6 +268,7 @@ export default class ImportExcelController {
 
           const aprendizNuevo = {
             idgrupo: grupo.idgrupo,
+            jornada,
             idprograma_formacion: programa.idprograma_formacion,
             perfil_idperfil: perfil.idperfil,
             nombres,
@@ -299,6 +311,7 @@ export default class ImportExcelController {
       return response.status(500).json({
         success: false,
         message: 'Error al importar aprendices',
+
         error: error.message,
       })
     }
