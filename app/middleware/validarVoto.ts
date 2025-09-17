@@ -9,7 +9,7 @@ export default class ValidarVotoUnico {
     const idEleccion = request.input('ideleccion') 
 
     if (!idAprendiz || !idEleccion) {
-      return response.badRequest({
+      return response.status(200).json({
         message: 'Debes enviar idaprendiz e ideleccion en la petición',
       })
     }
@@ -21,9 +21,9 @@ export default class ValidarVotoUnico {
       .preload('candidato', (candidatoQuery) => {
         candidatoQuery.where('ideleccion', idEleccion) 
       })
-
     // 3. Verificar si efectivamente tiene algún voto en esa elección
     const yaVoto = votoExistente.some((v) => v.candidato?.ideleccion === idEleccion)
+    console.log("ya voto?"+yaVoto)
 
     if (yaVoto) {
       return response.status(200).json({succes:false,
