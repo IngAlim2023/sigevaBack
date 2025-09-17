@@ -6,7 +6,7 @@ import Perfil from '#models/perfil'
 export default class UsuariosController {
   async crear({ request, response }: HttpContext) {
     try {
-      const { email, password, estado, idperfil, idcentro_formacion } = request.body()
+      const { nombres, apellidos, celular, tipo_documento, numero_documento, email, password, estado, idperfil, idcentro_formacion } = request.body()
 
       const existe = await Usuario.findBy('email', email)
       if (existe) {
@@ -15,7 +15,7 @@ export default class UsuariosController {
 
       const hashpassword = await bcrypt.hash(password, 10)
 
-      const usuario = await Usuario.create({ email, password: hashpassword, estado, idperfil, idcentro_formacion })
+      const usuario = await Usuario.create({ nombres, apellidos, celular, tipo_documento, numero_documento, email, password: hashpassword, estado, idperfil, idcentro_formacion })
 
       return response.status(201).json({
         success: true,
@@ -114,17 +114,22 @@ export default class UsuariosController {
 
   async crearFuncionario({ request, response }: HttpContext) {
     try {
-      const { email, password, idcentro_formacion } = request.only([
+      const { nombres, apellidos, celular, tipo_documento, numero_documento, email, password, idcentro_formacion } = request.only([
+        'nombres',
+        'apellidos',
+        'celular',
+        'tipo_documento',
+        'numero_documento',
         'email',
         'password',
         'idcentro_formacion'
       ])
 
       // Validar campos requeridos
-      if (!email || !password || !idcentro_formacion) {
+      if (!email || !password || !idcentro_formacion || !nombres || !apellidos || !celular || !tipo_documento || !numero_documento) {
         return response.status(400).json({
           error: 'Faltan campos requeridos',
-          required: ['email', 'password', 'idcentro_formacion']
+          required: [ 'nombres', 'apellidos', 'celular', 'tipo_documento', 'numero_documento','email', 'password', 'idcentro_formacion']
         })
       }
 
@@ -146,6 +151,11 @@ export default class UsuariosController {
 
       // Crear el funcionario usando el modelo directamente
       const funcionario = await Usuario.create({
+        nombres, 
+        apellidos, 
+        celular, 
+        tipo_documento, 
+        numero_documento,
         email,
         password: await bcrypt.hash(password, 10),
         estado: 'Activo',

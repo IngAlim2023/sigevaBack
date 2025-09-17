@@ -36,12 +36,19 @@ export default class EleccionControler {
     try {
       const dataEleccion = request.only([
         'idcentro_formacion',
+        'jornada',
         'fecha_inicio',
         'fecha_fin',
         'hora_inicio',
         'hora_fin',
         'nombre',
       ])
+
+      if (dataEleccion.jornada != 'Mañana' && dataEleccion.jornada != 'Tarde' && dataEleccion.jornada != 'Noche') {
+        return response
+        .status(400)
+        .json({message: 'La jornada no es válida'})
+      }
 
       if (!dataEleccion.idcentro_formacion) {
         return response
@@ -89,12 +96,19 @@ export default class EleccionControler {
 
       const dataEleccion = request.only([
         'idcentro_formacion',
+        'jornada',
         'fecha_inicio',
         'fecha_fin',
         'hora_inicio',
         'hora_fin',
         'nombre',
       ])
+
+      if (dataEleccion.jornada != 'Mañana' && dataEleccion.jornada != 'Tarde' && dataEleccion.jornada != 'Noche') {
+        return response
+        .status(400)
+        .json({message: 'La jornada no es válida'})
+      }
 
       //validaciones fechas inicio y fin
       if (!dataEleccion.fecha_inicio || !dataEleccion.fecha_fin) {
@@ -151,7 +165,7 @@ export default class EleccionControler {
         const fechaFin = new Date(eleccion.fecha_fin)
 
         if (hoy >= fechaInicio && hoy <= fechaFin) {
-          const primerCandidato = eleccion.candidato[0]
+          //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
             ideleccion: eleccion.ideleccion,
@@ -159,7 +173,8 @@ export default class EleccionControler {
             fechaInicio: eleccion.fecha_inicio,
             fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
-            jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
+            jornada: eleccion.jornada
+            //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
         }
       })
@@ -192,7 +207,7 @@ export default class EleccionControler {
       let eleccionesActivas: any[] = []
 
       elecciones.forEach((eleccion) => {
-          const primerCandidato = eleccion.candidato[0]
+          //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
             ideleccion: eleccion.ideleccion,
@@ -200,7 +215,8 @@ export default class EleccionControler {
             fechaInicio: eleccion.fecha_inicio,
             fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
-            jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
+            jornada: eleccion.jornada,
+            //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
 
       })

@@ -12,6 +12,21 @@ export default class Usuario extends BaseModel {
   declare idusuarios: number
 
   @column()
+  declare nombres: string
+
+  @column()
+  declare apellidos: string
+
+  @column()
+  declare celular: string
+
+  @column({ columnName: 'tipo_documento' })
+  declare tipo_documento: string
+
+  @column({ columnName: 'numero_documento' })
+  declare numero_documento: string
+
+  @column()
   declare email: string
 
   @column()
