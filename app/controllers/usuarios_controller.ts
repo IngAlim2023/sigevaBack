@@ -81,9 +81,13 @@ export default class UsuariosController {
         return response.status(404).json({ success: false, message: 'Usuario no encontrado' })
       }
 
-      const { email, password, estado, idperfil, idcentro_formacion } = request.body()
+      const { nombres, apellidos, celular, numero_documento, email, password, estado, idperfil, idcentro_formacion } = request.body()
 
       // Solo actualiza si se envía un nuevo valor
+      if (nombres) usuario.nombres = nombres
+      if (apellidos) usuario.apellidos = apellidos
+      if (celular) usuario.celular = celular
+      if (numero_documento) usuario.numero_documento = numero_documento
       if (email) usuario.email = email
       if (password) usuario.password = await bcrypt.hash(password, 10)
       if (estado !== undefined) usuario.estado = estado
