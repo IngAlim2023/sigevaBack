@@ -106,6 +106,21 @@ export default class ImportExcelController {
       }
 
       const data: any[] = XLSX.utils.sheet_to_json(sheet, { range: 4, defval: '' })
+      // Recolectar todos los números de documento y correos
+      const docsSet = new Set<string>()
+      const emailsSet = new Set<string>()
+      const filasProcesables: any[] = []
+
+      for (const fila of data) {
+        const numeroDocumento = (fila['Número de Documento'] || '').toString().trim()
+        const email = (fila['Correo Electrónico'] || '').toString().trim().toLowerCase()
+
+        if (!numeroDocumento && !email) continue // nada con qué buscar
+
+        filasProcesables.push({ fila, numeroDocumento, email })
+        if (numeroDocumento) docsSet.add(numeroDocumento)
+        if (email) emailsSet.add(email)
+      }
 
       // Perfil "Aprendiz"
       const perfil = await Perfil.query().whereRaw('LOWER(perfil) = LOWER(?)', ['aprendiz']).first()
@@ -162,53 +177,85 @@ export default class ImportExcelController {
       }
 
       // 5) Iterar filas
-      for (const fila of data) {
-        const {
-          'Tipo de Documento': tipoDocumento,
-          'Número de Documento': numeroDocumento,
-          'Nombre': nombres,
-          'Apellidos': apellidos,
-          'Celular': celular,
-          'Correo Electrónico': email,
-          'Estado': estado,
-          ...otrosCampos
-        } = fila
+      // ---------- Nueva lógica para evitar duplicados ----------
+      if (filasProcesables.length === 0) {
+        await trx.commit()
+        return response.ok({ success: true, message: 'No hay filas válidas en el Excel' })
+      }
 
-        if (!numeroDocumento || !email) continue
+      // Traer de una sola consulta los aprendices existentes
+      const docsArray = Array.from(docsSet)
+      const emailsArray = Array.from(emailsSet)
 
-        let aprendiz = await Aprendiz.query()
-          .where((q) => q.where('email', email).orWhere('numero_documento', numeroDocumento))
-          .andWhere('centro_formacion_idcentro_formacion', centroFormacionId!)
-          .first()
+      const existentesQuery = Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', centroFormacionId!)
+        .andWhere((q) => {
+          if (docsArray.length) q.whereIn('numero_documento', docsArray)
+          if (emailsArray.length) {
+            if (docsArray.length) q.orWhereIn('email', emailsArray)
+            else q.whereIn('email', emailsArray)
+          }
+        })
+        .useTransaction(trx)
 
-        if (aprendiz) {
-          const aprendizAny = aprendiz as any
+      const existentes = await existentesQuery
 
-          Object.keys(otrosCampos).forEach((key) => {
-            if (!aprendizAny[key] && otrosCampos[key]) {
-              aprendizAny[key] = otrosCampos[key]
-            }
-          })
+      // Mapear existentes
+      const existentesPorDoc = new Map<string, any>()
+      const existentesPorEmail = new Map<string, any>()
+      for (const a of existentes) {
+        if (a.numero_documento) existentesPorDoc.set(a.numero_documento.toString(), a)
+        if (a.email) existentesPorEmail.set(a.email.toLowerCase(), a)
+      }
 
-          aprendizAny.nombres = aprendizAny.nombres || nombres
-          aprendizAny.apellidos = aprendizAny.apellidos || apellidos
-          aprendizAny.celular = aprendizAny.celular || celular
-          aprendizAny.estado = aprendizAny.estado || estado
-          aprendizAny.tipo_documento = aprendizAny.tipo_documento || tipoDocumento
-          aprendizAny.idgrupo = aprendizAny.idgrupo || grupo.idgrupo
-          aprendizAny.idprograma_formacion =
-            aprendizAny.idprograma_formacion || programa.idprograma_formacion
+      const paraInsertar: any[] = []
 
-          aprendizAny.centro_formacion_idcentro_formacion =
-            aprendizAny.centro_formacion_idcentro_formacion || centroFormacionId
+      for (const item of filasProcesables) {
+        const fila = item.fila
 
-          await aprendizAny.useTransaction(trx).save()
-        } else {
-          const passwordTemporal = numeroDocumento
+        // normalizar y limpiar identificadores
+        const numeroDocumentoRaw = (item.numeroDocumento || '').toString().trim()
+        const numeroDocumento = numeroDocumentoRaw ? numeroDocumentoRaw.replace(/\s+/g, '') : ''
+        const emailRaw = (item.email || '').toString().trim()
+        const email = emailRaw ? emailRaw.toLowerCase() : ''
+
+        const tipoDocumento = fila['Tipo de Documento'] || ''
+        const nombres = fila['Nombre'] || ''
+        const apellidos = fila['Apellidos'] || ''
+        const celular = fila['Celular'] || ''
+        const estado = fila['Estado'] || ''
+
+        // Construir otrosCampos filtrando claves invalidas (__EMPTY, '', null)
+        const rawOtros: Record<string, any> = { ...fila }
+        delete rawOtros['Tipo de Documento']
+        delete rawOtros['Número de Documento']
+        delete rawOtros['Nombre']
+        delete rawOtros['Apellidos']
+        delete rawOtros['Celular']
+        delete rawOtros['Correo Electrónico']
+        delete rawOtros['Estado']
+
+        const otrosCampos: Record<string, any> = {}
+        for (const [key, val] of Object.entries(rawOtros)) {
+          if (!key) continue
+          const k = key.toString().trim()
+          if (k === '' || k.startsWith('__EMPTY')) continue
+          // opcional: normalizar claves, p.ej. quitar espacios múltiples
+          const keyNormalized = k
+          otrosCampos[keyNormalized] = val
+        }
+
+        // Verificar si ya existe (usar valores normalizados)
+        const existe =
+          (numeroDocumento && existentesPorDoc.get(numeroDocumento)) ||
+          (email && existentesPorEmail.get(email))
+
+        if (!existe) {
+          const passwordTemporal =
+            numeroDocumento || email || Math.random().toString(36).slice(2, 10)
           const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
 
-          const aprendizNuevo = new Aprendiz()
-          Object.assign(aprendizNuevo, {
+          const aprendizNuevo: any = {
             perfil_idperfil: perfil.idperfil,
             tipo_documento: tipoDocumento,
             numero_documento: numeroDocumento,
@@ -222,19 +269,38 @@ export default class ImportExcelController {
             idprograma_formacion: programa.idprograma_formacion,
             centro_formacion_idcentro_formacion: centroFormacionId,
             ...otrosCampos,
-          })
-          await aprendizNuevo.useTransaction(trx).save()
+          }
+
+          paraInsertar.push(aprendizNuevo)
+        }
+      }
+
+      if (paraInsertar.length > 0) {
+        const chunkSize = 200
+        for (let i = 0; i < paraInsertar.length; i += chunkSize) {
+          const chunk = paraInsertar.slice(i, i + chunkSize)
+          for (const item of chunk) {
+            const model = new Aprendiz()
+            model.merge(item)
+            await model.useTransaction(trx).save()
+          }
         }
       }
 
       await trx.commit()
-      return response.ok({ success: true, message: 'Aprendices importados con éxito' })
+      return response.ok({
+        success: true,
+        message: 'Importación procesada',
+        inserted: paraInsertar.length,
+        skipped: filasProcesables.length - paraInsertar.length,
+      })
     } catch (error: any) {
       await trx.rollback()
 
       return response.status(500).json({
         success: false,
         message: 'Error al importar aprendices',
+        error: error.message,
       })
     }
   }
