@@ -6,7 +6,7 @@ import Perfil from '#models/perfil'
 export default class UsuariosController {
   async crear({ request, response }: HttpContext) {
     try {
-      const { email, password, estado, idperfil, idcentro_formacion } = request.body()
+      const { nombres, apellidos, celular, tipo_documento, numero_documento, email, password, estado, idperfil, idcentro_formacion } = request.body()
 
       const existe = await Usuario.findBy('email', email)
       if (existe) {
@@ -15,7 +15,7 @@ export default class UsuariosController {
 
       const hashpassword = await bcrypt.hash(password, 10)
 
-      const usuario = await Usuario.create({ email, password: hashpassword, estado, idperfil, idcentro_formacion })
+      const usuario = await Usuario.create({ nombres, apellidos, celular, tipo_documento, numero_documento, email, password: hashpassword, estado, idperfil, idcentro_formacion })
 
       return response.status(201).json({
         success: true,
