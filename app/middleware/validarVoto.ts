@@ -21,6 +21,7 @@ export default class ValidarVotoUnico {
       .preload('candidato', (candidatoQuery) => {
         candidatoQuery.where('ideleccion', idEleccion) 
       })
+    console.log("votos"+votoExistente)
     // 3. Verificar si efectivamente tiene algún voto en esa elección
     const yaVoto = votoExistente.some((v) => v.candidato?.ideleccion === idEleccion)
     console.log("ya voto?"+yaVoto)
