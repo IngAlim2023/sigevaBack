@@ -191,20 +191,23 @@ export default class ValidacionVotoController {
       })
 
       // 9. Enviar email con OTP
+      // Limpiar email para eliminar espacios en blanco (común en datos de Excel)
+      const emailLimpio = aprendiz.email?.trim()
+      
       console.log('🔧 Configuración SMTP:', {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         username: process.env.SMTP_USERNAME,
         from: process.env.MAIL_FROM_ADDRESS,
-        to: aprendiz.email
+        to: emailLimpio
       })
 
       try {
-        console.log(`📧 Intentando enviar email OTP a: ${aprendiz.email}`)
+        console.log(`📧 Intentando enviar email OTP a: ${emailLimpio}`)
         
         await mail.send((message) => {
           message
-            .to(aprendiz.email)
+            .to(emailLimpio)
             .from(process.env.MAIL_FROM_ADDRESS || 'noreply@sigeva.com')
             .subject('Código OTP para Votación - SIGEVA')
             .html(`
@@ -215,7 +218,7 @@ export default class ValidacionVotoController {
             `)
         })
         
-        console.log(`✅ Email OTP enviado exitosamente a: ${aprendiz.email}`)
+        console.log(`✅ Email OTP enviado exitosamente a: ${emailLimpio}`)
       } catch (emailError) {
         console.error('❌ Error completo enviando email OTP:', {
           error: emailError.message,
@@ -230,7 +233,7 @@ export default class ValidacionVotoController {
       // Respuesta base
       const responseData: any = {
         otp_generado: true,
-        email_enviado_a: aprendiz.email,
+        email_enviado_a: emailLimpio,
         expira_en_minutos: expirationMinutes,
         eleccion: {
           nombre: eleccion.nombre,
@@ -339,3 +342,4 @@ export default class ValidacionVotoController {
     }
   }
 }
+//coemtario
