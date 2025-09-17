@@ -87,9 +87,9 @@ export default class ValidacionVotoController {
         })
       }
 
-      if (aprendiz.estado !== 'activo') {
+      if (aprendiz.estado !== 'activo' && aprendiz.estado !== 'EN FORMACION') {
         return response.status(400).json({
-          message: 'El aprendiz debe estar en estado activo para votar',
+          message: 'El aprendiz debe estar en estado activo o en formación para votar',
           codigo_error: 'APRENDIZ_INACTIVO'
         })
       }
@@ -342,4 +342,3 @@ export default class ValidacionVotoController {
     }
   }
 }
-//coemtario
