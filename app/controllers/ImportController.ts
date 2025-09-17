@@ -268,7 +268,7 @@ export default class ImportExcelController {
 
           const aprendizNuevo = {
             idgrupo: grupo.idgrupo,
-            jornada,
+
             idprograma_formacion: programa.idprograma_formacion,
             perfil_idperfil: perfil.idperfil,
             nombres,
@@ -307,7 +307,8 @@ export default class ImportExcelController {
       })
     } catch (error: any) {
       await trx.rollback()
-      console.error('Error en importarAprendices:', error) //  log completo
+      console.error('Error en importarAprendices completo:', error)
+      console.error('Stack trace:', error.stack)
       return response.status(500).json({
         success: false,
         message: 'Error al importar aprendices',
