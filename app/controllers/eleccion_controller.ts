@@ -156,7 +156,6 @@ export default class EleccionControler {
           })
         })
 
-      const hoy = new Date()
 
       let eleccionesActivas: any[] = []
 
@@ -164,7 +163,26 @@ export default class EleccionControler {
         const fechaInicio = new Date(eleccion.fecha_inicio)
         const fechaFin = new Date(eleccion.fecha_fin)
 
-        if (hoy >= fechaInicio && hoy <= fechaFin) {
+        const hoy = new Date()
+        const soloFechaHoy = hoy.toISOString().split('T')[0]
+        const soloFechaInicio = fechaInicio.toISOString().split('T')[0]
+        const soloFechaFin = fechaFin.toISOString().split('T')[0]
+
+        const horaInicioDate = new Date(eleccion.hora_inicio as any)
+        const horaFinDate = new Date(eleccion.hora_fin as any)
+
+        const minutosInicio = horaInicioDate.getHours() * 60 + horaInicioDate.getMinutes()
+        const minutosFin = horaFinDate.getHours() * 60 + horaFinDate.getMinutes()
+
+        const minutosAhora = hoy.getHours() * 60 + hoy.getMinutes()
+
+
+                    
+    if (
+        (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
+        (soloFechaHoy === soloFechaInicio && minutosAhora >= minutosInicio) ||
+        (soloFechaHoy === soloFechaFin && minutosAhora <= minutosFin)         
+        ) {
           //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
