@@ -303,4 +303,45 @@ export default class AprendizsController {
       })
     }
   }
+  async aprendicesAvaibleAll({ response }: HttpContext) {
+    try {
+      const aprendices = await Aprendiz.query().whereRaw('LOWER(estado) IN (?, ?)', [
+        'en formacion',
+        'activo',
+      ])
+      return response.status(200).json({
+        message: 'Éxito',
+        data: aprendices,
+      })
+    } catch (e) {
+      return response.status(500).json({ message: 'Error', error: e.message })
+    }
+  }
+  async aprendicesAvailableByCentros({ params, response }: HttpContext) {
+  try {
+    const centroId = Number(params.id);
+    if (isNaN(centroId)) {
+      return response.status(400).json({
+        message: 'El ID del centro de formación debe ser un número válido',
+      });
+    }
+    const estadosValidos = ['en formacion', 'activo'];
+
+    const aprendices = await Aprendiz.query()
+      .where('centro_formacion_idcentro_formacion', centroId)
+      .whereRaw('LOWER(estado) IN (?)', [estadosValidos]);
+
+    return response.status(200).json({
+      message: 'Éxito',
+      data: aprendices,
+    });
+
+  } catch (e) {
+    return response.status(500).json({
+      message: 'Error al obtener los aprendices',
+      error: e.message,
+    });
+  }
+}
+
 }
