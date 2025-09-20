@@ -28,6 +28,9 @@ router
     router.get('/disponibles/', aprendizsController.aprendicesAvaibleAll)
 
     router.get('/disponibles/centros/:id', aprendizsController.aprendicesAvailableByCentros)
+  
+    //Aprendices inscritos por cecntro de información:
+    router.get('/inscritos/centro/:id', aprendizsController.aprendicesInscritosByCentro)
 
 
   })

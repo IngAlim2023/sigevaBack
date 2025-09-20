@@ -335,4 +335,26 @@ export default class AprendizsController {
       })
     }
   }
+  async aprendicesInscritosByCentro({ params, response }: HttpContext) {
+    try {
+      const { id } = params
+
+      const aprendices = await Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', id)
+        .preload('grupo')
+        .preload('programa')
+        .preload('perfil')
+        .preload('centro_formacion', (cf) => cf.select(['centro_formacioncol']))
+        
+      return response.status(200).json({
+        message: 'Éxito',
+        data: aprendices,
+      })
+    } catch (e) {
+      return response.status(500).json({
+        message: 'Error al obtener los aprendices',
+        error: e.message,
+      })
+    }
+  }
 }
