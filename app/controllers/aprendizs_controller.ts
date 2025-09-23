@@ -246,7 +246,7 @@ export default class AprendizsController {
       const verifyPassword = await bcrypt.compare(password, aprendizExist.password)
 
       if (!verifyPassword)
-        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
+        return response.json({ success: false, message: 'Fallo en la autenticación' })
 
       return response.status(200).json({
         success: true,

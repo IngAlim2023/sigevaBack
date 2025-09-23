@@ -47,7 +47,7 @@ export default class UsuariosController {
 
       const passwordValido = await bcrypt.compare(password, usuario.password)
       if (!passwordValido) {
-        return response.status(401).json({ success: false, message: 'Contraseña incorrecta' })
+        return response.status(200).json({ success: false, message: 'Contraseña incorrecta' })
       }
 
       const perfil = await Perfil.findBy('idperfil', usuario.idperfil)
