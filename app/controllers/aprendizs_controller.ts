@@ -303,4 +303,58 @@ export default class AprendizsController {
       })
     }
   }
+  async aprendicesAvaibleAll({ response }: HttpContext) {
+    try {
+      const aprendices = await Aprendiz.query().whereRaw('LOWER(estado) IN (?, ?)', [
+        'en formacion',
+        'activo',
+      ])
+      return response.status(200).json({
+        message: 'Éxito',
+        data: aprendices,
+      })
+    } catch (e) {
+      return response.status(500).json({ message: 'Error', error: e.message })
+    }
+  }
+  async aprendicesAvailableByCentros({ params, response }: HttpContext) {
+    try {
+      const { id } = params
+
+      const aprendices = await Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', id)
+        .whereRaw('LOWER(estado) IN (?, ?)', ['en formacion', 'activo'])
+      return response.status(200).json({
+        message: 'Éxito',
+        data: aprendices,
+      })
+    } catch (e) {
+      return response.status(500).json({
+        message: 'Error al obtener los aprendices',
+        error: e.message,
+      })
+    }
+  }
+  async aprendicesInscritosByCentro({ params, response }: HttpContext) {
+    try {
+      const { id } = params
+
+      const aprendices = await Aprendiz.query()
+        .where('centro_formacion_idcentro_formacion', id)
+        .preload('grupo')
+        .preload('programa')
+        .preload('perfil')
+        .preload('centro_formacion', (cf) => cf.select(['centro_formacioncol']))
+        
+      return response.status(200).json({
+        message: 'Éxito',
+        data: aprendices,
+      })
+    } catch (e) {
+      return response.status(500).json({
+        message: 'Error al obtener los aprendices',
+        error: e.message,
+      })
+    }
+  }
 }
