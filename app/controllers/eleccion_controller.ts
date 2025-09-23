@@ -191,7 +191,9 @@ export default class EleccionControler {
             fechaInicio: eleccion.fecha_inicio,
             fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
-            jornada: eleccion.jornada
+            jornada: eleccion.jornada,
+            horaInicio: eleccion.hora_inicio,
+            horaFin:eleccion.hora_fin
             //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
         }
