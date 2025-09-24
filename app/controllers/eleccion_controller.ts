@@ -44,10 +44,12 @@ export default class EleccionControler {
         'nombre',
       ])
 
-      if (dataEleccion.jornada != 'Mañana' && dataEleccion.jornada != 'Tarde' && dataEleccion.jornada != 'Noche') {
-        return response
-        .status(400)
-        .json({message: 'La jornada no es válida'})
+      if (
+        dataEleccion.jornada != 'Mañana' &&
+        dataEleccion.jornada != 'Tarde' &&
+        dataEleccion.jornada != 'Noche'
+      ) {
+        return response.status(400).json({ message: 'La jornada no es válida' })
       }
 
       if (!dataEleccion.idcentro_formacion) {
@@ -104,10 +106,12 @@ export default class EleccionControler {
         'nombre',
       ])
 
-      if (dataEleccion.jornada != 'Mañana' && dataEleccion.jornada != 'Tarde' && dataEleccion.jornada != 'Noche') {
-        return response
-        .status(400)
-        .json({message: 'La jornada no es válida'})
+      if (
+        dataEleccion.jornada != 'Mañana' &&
+        dataEleccion.jornada != 'Tarde' &&
+        dataEleccion.jornada != 'Noche'
+      ) {
+        return response.status(400).json({ message: 'La jornada no es válida' })
       }
 
       //validaciones fechas inicio y fin
@@ -156,7 +160,6 @@ export default class EleccionControler {
           })
         })
 
-
       let eleccionesActivas: any[] = []
 
       elecciones.forEach((eleccion) => {
@@ -176,24 +179,23 @@ export default class EleccionControler {
 
         const minutosAhora = hoy.getHours() * 60 + hoy.getMinutes()
 
-
-                    
-    if (
-        // Caso 1: hoy está entre fechaInicio y fechaFin (excluyendo extremos)
-        (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
-
-        // Caso 2: hoy es el mismo día de inicio y de fin (rango en un día)
-        (soloFechaHoy === soloFechaInicio && soloFechaHoy === soloFechaFin &&
-          minutosAhora >= minutosInicio && minutosAhora <= minutosFin) ||
-
-        // Caso 3: hoy es solo el día de inicio (y ya pasó la hora de inicio)
-        (soloFechaHoy === soloFechaInicio && soloFechaHoy < soloFechaFin &&
-          minutosAhora >= minutosInicio) ||
-
-        // Caso 4: hoy es solo el día de fin (y aún no pasa la hora de fin)
-        (soloFechaHoy === soloFechaFin && soloFechaHoy > soloFechaInicio &&
-          minutosAhora <= minutosFin)
-      ) {
+        if (
+          // Caso 1: hoy está entre fechaInicio y fechaFin (excluyendo extremos)
+          (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
+          // Caso 2: hoy es el mismo día de inicio y de fin (rango en un día)
+          (soloFechaHoy === soloFechaInicio &&
+            soloFechaHoy === soloFechaFin &&
+            minutosAhora >= minutosInicio &&
+            minutosAhora <= minutosFin) ||
+          // Caso 3: hoy es solo el día de inicio (y ya pasó la hora de inicio)
+          (soloFechaHoy === soloFechaInicio &&
+            soloFechaHoy < soloFechaFin &&
+            minutosAhora >= minutosInicio) ||
+          // Caso 4: hoy es solo el día de fin (y aún no pasa la hora de fin)
+          (soloFechaHoy === soloFechaFin &&
+            soloFechaHoy > soloFechaInicio &&
+            minutosAhora <= minutosFin)
+        ) {
           //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
@@ -204,18 +206,16 @@ export default class EleccionControler {
             centro: eleccion.centro.centro_formacioncol,
             jornada: eleccion.jornada,
             horaInicio: eleccion.hora_inicio,
-            horaFin:eleccion.hora_fin
+            horaFin: eleccion.hora_fin,
             //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
         }
       })
 
-      return response
-        .status(200)
-        .json({
-          message: 'Elecciones por centros de formacion traidos correctamente',
-          eleccionesActivas,
-        })
+      return response.status(200).json({
+        message: 'Elecciones por centros de formacion traidos correctamente',
+        eleccionesActivas,
+      })
     } catch (error) {
       console.log(error)
       return response
@@ -238,26 +238,22 @@ export default class EleccionControler {
       let eleccionesActivas: any[] = []
 
       elecciones.forEach((eleccion) => {
-          //const primerCandidato = eleccion.candidato[0]
-
-          eleccionesActivas.push({
-            ideleccion: eleccion.ideleccion,
-            titulo: eleccion.nombre,
-            fechaInicio: eleccion.fecha_inicio,
-            fechaFin: eleccion.fecha_fin,
-            centro: eleccion.centro.centro_formacioncol,
-            jornada: eleccion.jornada,
-            //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
-          })
-
+        eleccionesActivas.push({
+          ideleccion: eleccion.ideleccion,
+          titulo: eleccion.nombre,
+          fechaInicio: eleccion.fecha_inicio,
+          fechaFin: eleccion.fecha_fin,
+          centro: eleccion.centro.centro_formacioncol,
+          jornada: eleccion.jornada,
+          horaInicio: eleccion.hora_inicio,
+          horaFin: eleccion.hora_fin,
+        })
       })
 
-      return response
-        .status(200)
-        .json({
-          message: 'Elecciones por centros de formacion traidos correctamente',
-          eleccionesActivas,
-        })
+      return response.status(200).json({
+        message: 'Elecciones por centros de formacion traidos correctamente',
+        eleccionesActivas,
+      })
     } catch (error) {
       console.log(error)
       return response
@@ -265,7 +261,6 @@ export default class EleccionControler {
         .json({ message: 'Error al obtner las elecciones por centro de formacion' })
     }
   }
-
 
   async traerPorJornada({ request, response }: HttpContext) {
     try {
@@ -282,12 +277,10 @@ export default class EleccionControler {
       })
       return response.status(200).json({ message: 'Elecciones filtradas por jornada', elecciones })
     } catch (error) {
-      return response
-        .status(500)
-        .json({
-          message: 'Error al obtener las eleccioness filtradas pro jornada',
-          error: error.message,
-        })
+      return response.status(500).json({
+        message: 'Error al obtener las eleccioness filtradas pro jornada',
+        error: error.message,
+      })
     }
   }
 
@@ -298,12 +291,10 @@ export default class EleccionControler {
         idCentro_formacion,
         jornada
       )
-      return response
-        .status(200)
-        .json({
-          message: 'Elecciones activas filtradas por jornada y centro formacion exitosamente',
-          eleccionesFiltradas,
-        })
+      return response.status(200).json({
+        message: 'Elecciones activas filtradas por jornada y centro formacion exitosamente',
+        eleccionesFiltradas,
+      })
     } catch (error) {
       return response
         .status(500)
