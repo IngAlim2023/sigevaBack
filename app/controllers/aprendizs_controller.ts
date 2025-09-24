@@ -308,6 +308,7 @@ export default class AprendizsController {
       const aprendices = await Aprendiz.query().whereRaw('LOWER(estado) IN (?, ?)', [
         'en formacion',
         'activo',
+        'condicionado',
       ])
       return response.status(200).json({
         message: 'Éxito',
@@ -323,7 +324,7 @@ export default class AprendizsController {
 
       const aprendices = await Aprendiz.query()
         .where('centro_formacion_idcentro_formacion', id)
-        .whereRaw('LOWER(estado) IN (?, ?)', ['en formacion', 'activo'])
+        .whereRaw('LOWER(estado) IN (?, ?)', ['en formacion', 'activo', 'condicionado'])
       return response.status(200).json({
         message: 'Éxito',
         data: aprendices,
