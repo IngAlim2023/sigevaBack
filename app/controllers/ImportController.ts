@@ -1,5 +1,5 @@
 /* eslint-disable @unicorn/filename-case */
-// ImportExcelController.ts
+// ImportExcelController.ts (parcheado - devuelve processed por fila)
 import type { HttpContext } from '@adonisjs/core/http'
 import Aprendiz from '#models/aprendiz'
 import Perfil from '#models/perfil'
@@ -22,6 +22,16 @@ export default class ImportExcelController {
       let updated = 0
       let skipped = 0
       let skippedAprendices: any[] = []
+
+      // Nuevo: array con resultado procesado por fila (útil para frontend)
+      const processed: Array<{
+        'Número de Documento': string
+        'Correo Electrónico': string
+        'Nombre': string
+        'Apellidos': string
+        'status': 'inserted' | 'updated' | 'skipped'
+        'motivo'?: string
+      }> = []
 
       // 1) Contexto: userId desde el frontend
       const userId = Number(request.input('userId'))
@@ -154,6 +164,8 @@ export default class ImportExcelController {
           inserted: 0,
           updated: 0,
           skipped: 0,
+          skippedAprendices: [],
+          processed: [],
         })
       }
 
@@ -209,12 +221,29 @@ export default class ImportExcelController {
       const filasUnicas: any[] = []
 
       for (const item of filasProcesables) {
-        const { numeroDocumento, email } = item
+        const { numeroDocumento, email, fila } = item
         if (
           (numeroDocumento && seenDocs.has(numeroDocumento)) ||
           (email && seenEmails.has(email))
         ) {
           skipped++
+          const motivo = 'Duplicado en el Excel'
+          skippedAprendices.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': fila['Nombre'] || '',
+            'Apellidos': fila['Apellidos'] || '',
+            'motivo': motivo,
+          })
+          // También registrar en processed para trazabilidad
+          processed.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': fila['Nombre'] || '',
+            'Apellidos': fila['Apellidos'] || '',
+            'status': 'skipped',
+            motivo,
+          })
           continue
         }
         if (numeroDocumento) seenDocs.add(numeroDocumento)
@@ -257,13 +286,36 @@ export default class ImportExcelController {
             })
             await existe.useTransaction(trx).save()
             updated++
-          } else skipped++
-          skippedAprendices.push({
-            'Número de Documento': numeroDocumento,
-            'Correo Electrónico': email,
-            'Nombre': fila['Nombre'] || '',
-            'Apellidos': fila['Apellidos'] || '',
-          })
+            // registrar en processed como updated
+            processed.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': nombres || '',
+              'Apellidos': apellidos || '',
+              'status': 'updated',
+              'motivo': 'Actualizado',
+            })
+            // NO empujamos a skippedAprendices: fue una actualización
+          } else {
+            // NO actualizar, cuenta como omitido
+            skipped++
+            const motivo = 'Ya está en la base de datos'
+            skippedAprendices.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': fila['Nombre'] || '',
+              'Apellidos': fila['Apellidos'] || '',
+              'motivo': motivo,
+            })
+            processed.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': nombres || '',
+              'Apellidos': apellidos || '',
+              'status': 'skipped',
+              motivo,
+            })
+          }
         } else {
           // Insertar nuevo
           const passwordTemporal =
@@ -287,6 +339,14 @@ export default class ImportExcelController {
           model.merge(aprendizNuevo)
           await model.useTransaction(trx).save()
           inserted++
+          processed.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': nombres || '',
+            'Apellidos': apellidos || '',
+            'status': 'inserted',
+            'motivo': 'Insertado',
+          })
         }
       }
 
@@ -298,6 +358,8 @@ export default class ImportExcelController {
         updated,
         skipped,
         skippedAprendices,
+        // Nuevo: resultados por fila para trazabilidad en frontend
+        processed,
       })
     } catch (error: any) {
       await trx.rollback()
