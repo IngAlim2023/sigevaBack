@@ -246,7 +246,7 @@ export default class AprendizsController {
       const verifyPassword = await bcrypt.compare(password, aprendizExist.password)
 
       if (!verifyPassword)
-        return response.json({ success: false, message: 'Fallo en la autenticación' })
+        return response.status(401).json({ success: false, message: 'Fallo en la autenticación' })
 
       return response.status(200).json({
         success: true,
@@ -308,7 +308,6 @@ export default class AprendizsController {
       const aprendices = await Aprendiz.query().whereRaw('LOWER(estado) IN (?, ?)', [
         'en formacion',
         'activo',
-        'condicionado',
       ])
       return response.status(200).json({
         message: 'Éxito',
@@ -324,7 +323,7 @@ export default class AprendizsController {
 
       const aprendices = await Aprendiz.query()
         .where('centro_formacion_idcentro_formacion', id)
-        .whereRaw('LOWER(estado) IN (?, ?)', ['en formacion', 'activo', 'condicionado'])
+        .whereRaw('LOWER(estado) IN (?, ?)', ['en formacion', 'activo'])
       return response.status(200).json({
         message: 'Éxito',
         data: aprendices,
