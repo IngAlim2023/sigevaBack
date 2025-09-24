@@ -56,27 +56,25 @@ export default class EleccionControler {
           .json({ message: 'El campo del centro de formacion es obligatorio' })
       }
 
-      if (!dataEleccion.fecha_inicio || !dataEleccion.fecha_fin) {
-        return response.status(400).json({ message: 'Los campos de las fechas son obligatorios' })
-      }
-
-      if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
+      if (dataEleccion.fecha_inicio && dataEleccion.fecha_fin) {
+        if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
         return response
           .status(400)
           .json({ message: 'La fecha de inicio no debe ser mayor a la fecha fin' })
       }
-
-      if (!dataEleccion.hora_inicio || !dataEleccion.hora_fin) {
-        return response
-          .status(400)
-          .json({ message: 'Los campos de hora inicio y fin son obligatorios' })
       }
 
-      if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
+      
+
+      if (dataEleccion.hora_inicio && dataEleccion.hora_fin) {
+        if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
         return response
           .status(400)
           .json({ message: 'La Hora de inicio no debe ser mayor a la Hora fin' })
       }
+      }
+
+      
 
       const eleccion = await Eleccione.create(dataEleccion)
       return response.status(201).json({ message: 'Eleccion creada con exito', eleccion })
@@ -111,28 +109,26 @@ export default class EleccionControler {
       }
 
       //validaciones fechas inicio y fin
-      if (!dataEleccion.fecha_inicio || !dataEleccion.fecha_fin) {
-        return response.status(400).json({ message: 'Los campos de las fechas son obligatorios' })
-      }
-
-      if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
+      if (dataEleccion.fecha_inicio && dataEleccion.fecha_fin) {
+       if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
         return response
           .status(400)
           .json({ message: 'La fecha de inicio no debe ser mayor a la fecha fin' })
       }
-
-      //validaciones  hora incio y fin
-      if (!dataEleccion.hora_inicio || !dataEleccion.hora_fin) {
-        return response
-          .status(400)
-          .json({ message: 'Los campos de hora inicio y fin son obligatorios' })
       }
 
-      if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
+      
+
+      //validaciones  hora incio y fin
+      if (dataEleccion.hora_inicio && dataEleccion.hora_fin) {
+       if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
         return response
           .status(400)
           .json({ message: 'La Hora de inicio no debe ser mayor a la Hora fin' })
       }
+      }
+
+      
 
       eleccion.merge(dataEleccion)
       await eleccion.save()
