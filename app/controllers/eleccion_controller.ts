@@ -56,25 +56,27 @@ export default class EleccionControler {
           .json({ message: 'El campo del centro de formacion es obligatorio' })
       }
 
-      if (dataEleccion.fecha_inicio && dataEleccion.fecha_fin) {
-        if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
+      if (!dataEleccion.fecha_inicio || !dataEleccion.fecha_fin) {
+        return response.status(400).json({ message: 'Los campos de las fechas son obligatorios' })
+      }
+
+      if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
         return response
           .status(400)
           .json({ message: 'La fecha de inicio no debe ser mayor a la fecha fin' })
       }
+
+      if (!dataEleccion.hora_inicio || !dataEleccion.hora_fin) {
+        return response
+          .status(400)
+          .json({ message: 'Los campos de hora inicio y fin son obligatorios' })
       }
 
-      
-
-      if (dataEleccion.hora_inicio && dataEleccion.hora_fin) {
-        if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
+      if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
         return response
           .status(400)
           .json({ message: 'La Hora de inicio no debe ser mayor a la Hora fin' })
       }
-      }
-
-      
 
       const eleccion = await Eleccione.create(dataEleccion)
       return response.status(201).json({ message: 'Eleccion creada con exito', eleccion })
@@ -109,26 +111,28 @@ export default class EleccionControler {
       }
 
       //validaciones fechas inicio y fin
-      if (dataEleccion.fecha_inicio && dataEleccion.fecha_fin) {
-       if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
+      if (!dataEleccion.fecha_inicio || !dataEleccion.fecha_fin) {
+        return response.status(400).json({ message: 'Los campos de las fechas son obligatorios' })
+      }
+
+      if (new Date(dataEleccion.fecha_inicio) > new Date(dataEleccion.fecha_fin)) {
         return response
           .status(400)
           .json({ message: 'La fecha de inicio no debe ser mayor a la fecha fin' })
       }
-      }
-
-      
 
       //validaciones  hora incio y fin
-      if (dataEleccion.hora_inicio && dataEleccion.hora_fin) {
-       if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
+      if (!dataEleccion.hora_inicio || !dataEleccion.hora_fin) {
+        return response
+          .status(400)
+          .json({ message: 'Los campos de hora inicio y fin son obligatorios' })
+      }
+
+      if (new Date(dataEleccion.hora_inicio) > new Date(dataEleccion.hora_fin)) {
         return response
           .status(400)
           .json({ message: 'La Hora de inicio no debe ser mayor a la Hora fin' })
       }
-      }
-
-      
 
       eleccion.merge(dataEleccion)
       await eleccion.save()
@@ -175,21 +179,10 @@ export default class EleccionControler {
 
                     
     if (
-        // Caso 1: hoy está entre fechaInicio y fechaFin (excluyendo extremos)
         (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
-
-        // Caso 2: hoy es el mismo día de inicio y de fin (rango en un día)
-        (soloFechaHoy === soloFechaInicio && soloFechaHoy === soloFechaFin &&
-          minutosAhora >= minutosInicio && minutosAhora <= minutosFin) ||
-
-        // Caso 3: hoy es solo el día de inicio (y ya pasó la hora de inicio)
-        (soloFechaHoy === soloFechaInicio && soloFechaHoy < soloFechaFin &&
-          minutosAhora >= minutosInicio) ||
-
-        // Caso 4: hoy es solo el día de fin (y aún no pasa la hora de fin)
-        (soloFechaHoy === soloFechaFin && soloFechaHoy > soloFechaInicio &&
-          minutosAhora <= minutosFin)
-      ) {
+        (soloFechaHoy === soloFechaInicio && minutosAhora >= minutosInicio) ||
+        (soloFechaHoy === soloFechaFin && minutosAhora <= minutosFin)         
+        ) {
           //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
@@ -198,9 +191,7 @@ export default class EleccionControler {
             fechaInicio: eleccion.fecha_inicio,
             fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
-            jornada: eleccion.jornada,
-            horaInicio: eleccion.hora_inicio,
-            horaFin:eleccion.hora_fin
+            jornada: eleccion.jornada
             //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
         }
