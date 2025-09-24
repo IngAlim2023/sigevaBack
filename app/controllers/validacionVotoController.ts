@@ -6,7 +6,6 @@ import { DateTime } from 'luxon'
 import mail from '@adonisjs/mail/services/main'
 
 export default class ValidacionVotoController {
-  
   /**
    * Obtener todas las validaciones de voto
    */
@@ -16,15 +15,15 @@ export default class ValidacionVotoController {
         .preload('aprendiz')
         .preload('eleccion')
         .orderBy('id', 'desc')
-      
+
       return response.status(200).json({
         message: 'Validaciones obtenidas exitosamente',
-        data: validaciones
+        data: validaciones,
       })
     } catch (error) {
       return response.status(500).json({
         message: 'Error al obtener las validaciones',
-        error: error.message
+        error: error.message,
       })
     }
   }
@@ -41,18 +40,18 @@ export default class ValidacionVotoController {
 
       if (!validacion) {
         return response.status(404).json({
-          message: 'Validación no encontrada'
+          message: 'Validación no encontrada',
         })
       }
 
       return response.status(200).json({
         message: 'Validación obtenida exitosamente',
-        data: validacion
+        data: validacion,
       })
     } catch (error) {
       return response.status(500).json({
         message: 'Error al obtener la validación',
-        error: error.message
+        error: error.message,
       })
     }
   }
@@ -67,7 +66,7 @@ export default class ValidacionVotoController {
       const validator = vine.compile(
         vine.object({
           aprendiz_idaprendiz: vine.number().positive(),
-          elecciones_ideleccion: vine.number().positive()
+          elecciones_ideleccion: vine.number().positive(),
         })
       )
 
@@ -83,17 +82,27 @@ export default class ValidacionVotoController {
       if (!aprendiz) {
         return response.status(404).json({
           message: 'El aprendiz especificado no existe',
-          codigo_error: 'APRENDIZ_NO_ENCONTRADO'
+          codigo_error: 'APRENDIZ_NO_ENCONTRADO',
         })
       }
 
-      if (aprendiz.estado !== 'activo' && aprendiz.estado !== 'EN FORMACION') {
+      const estadosPermitidos = [
+        'activo',
+        'en formacion',
+        'suspension',
+        'pendiente',
+        'condicionado',
+      ]
+
+      // Normalizar estado del aprendiz a minúsculas y eliminar espacios
+      const estadoAprendiz = (aprendiz.estado || '').toString().trim().toLowerCase()
+
+      if (!estadosPermitidos.includes(estadoAprendiz)) {
         return response.status(400).json({
-          message: 'El aprendiz debe estar en estado activo o en formación para votar',
-          codigo_error: 'APRENDIZ_INACTIVO'
+          message: `El aprendiz debe estar en uno de los estados permitidos: ${estadosPermitidos.join(', ')}`,
+          codigo_error: 'APRENDIZ_ESTADO_INVALIDO',
         })
       }
-
       // 2. Verificar que la elección existe y está activa
       const eleccion = await (await import('#models/eleccione')).default
         .query()
@@ -104,7 +113,7 @@ export default class ValidacionVotoController {
       if (!eleccion) {
         return response.status(404).json({
           message: 'La elección especificada no existe',
-          codigo_error: 'ELECCION_NO_ENCONTRADA'
+          codigo_error: 'ELECCION_NO_ENCONTRADA',
         })
       }
 
@@ -119,8 +128,8 @@ export default class ValidacionVotoController {
           codigo_error: 'ELECCION_NO_INICIADA',
           detalles: {
             fecha_inicio: eleccion.fecha_inicio,
-            fecha_actual: fechaActual.toISOString().split('T')[0]
-          }
+            fecha_actual: fechaActual.toISOString().split('T')[0],
+          },
         })
       }
 
@@ -130,8 +139,8 @@ export default class ValidacionVotoController {
           codigo_error: 'ELECCION_FINALIZADA',
           detalles: {
             fecha_fin: eleccion.fecha_fin,
-            fecha_actual: fechaActual.toISOString().split('T')[0]
-          }
+            fecha_actual: fechaActual.toISOString().split('T')[0],
+          },
         })
       }
 
@@ -139,7 +148,7 @@ export default class ValidacionVotoController {
       if (aprendiz.centro_formacion_idcentro_formacion !== eleccion.idcentro_formacion) {
         return response.status(400).json({
           message: 'El aprendiz y la elección deben pertenecer al mismo centro de formación',
-          codigo_error: 'CENTRO_FORMACION_DIFERENTE'
+          codigo_error: 'CENTRO_FORMACION_DIFERENTE',
         })
       }
 
@@ -162,15 +171,15 @@ export default class ValidacionVotoController {
           codigo_error: 'YA_VOTO',
           detalles: {
             fecha_voto: yaVoto.createdAt,
-            codigo_validacion: yaVoto.codigo
-          }
+            codigo_validacion: yaVoto.codigo,
+          },
         })
       }
 
       // 6.1. Limpiar OTPs expirados o no utilizados del mismo usuario
       const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
       const tiempoLimite = DateTime.now().minus({ minutes: expirationMinutes })
-      
+
       await ValidacionVoto.query()
         .where('aprendiz_idaprendiz', data.aprendiz_idaprendiz)
         .where('elecciones_ideleccion', data.elecciones_ideleccion)
@@ -187,37 +196,35 @@ export default class ValidacionVotoController {
         codigo: `${otpCode}`,
         aprendiz_idaprendiz: data.aprendiz_idaprendiz,
         elecciones_ideleccion: data.elecciones_ideleccion,
-
       })
 
       // 9. Enviar email con OTP
       // Limpiar email para eliminar espacios en blanco (común en datos de Excel)
       const emailLimpio = aprendiz.email?.trim()
-      
+
       console.log('🔧 Configuración SMTP:', {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         username: process.env.SMTP_USERNAME,
         from: process.env.MAIL_FROM_ADDRESS,
-        to: emailLimpio
+        to: emailLimpio,
       })
 
       try {
         console.log(`📧 Intentando enviar email OTP a: ${emailLimpio}`)
-        
+
         await mail.send((message) => {
           message
             .to(emailLimpio)
             .from(process.env.MAIL_FROM_ADDRESS || 'noreply@sigeva.com')
-            .subject('Código OTP para Votación - SIGEVA')
-            .html(`
+            .subject('Código OTP para Votación - SIGEVA').html(`
               <h2>Código OTP para Votación</h2>
               <p>Hola ${aprendiz.nombres} ${aprendiz.apellidos},</p>
               <p>Tu código OTP es: <strong style="font-size: 24px; color: #007bff;">${otpCode}</strong></p>
               <p>Este código expira en ${expirationMinutes} minutos.</p>
             `)
         })
-        
+
         console.log(`✅ Email OTP enviado exitosamente a: ${emailLimpio}`)
       } catch (emailError) {
         console.error('❌ Error completo enviando email OTP:', {
@@ -225,7 +232,7 @@ export default class ValidacionVotoController {
           code: emailError.code,
           command: emailError.command,
           response: emailError.response,
-          responseCode: emailError.responseCode
+          responseCode: emailError.responseCode,
         })
         // No fallar la operación si el email falla, pero registrar el error
       }
@@ -238,29 +245,29 @@ export default class ValidacionVotoController {
         eleccion: {
           nombre: eleccion.nombre,
           centro: eleccion.centro?.centro_formacioncol,
-          total_candidatos: totalCandidatos[0]?.$extras?.total || 0
+          total_candidatos: totalCandidatos[0]?.$extras?.total || 0,
         },
         aprendiz: {
           nombre: `${aprendiz.nombres} ${aprendiz.apellidos}`,
-          centro: aprendiz.centro_formacion?.centro_formacioncol
-        }
+          centro: aprendiz.centro_formacion?.centro_formacioncol,
+        },
       }
 
       // Solo incluir OTP en desarrollo (NODE_ENV !== 'production')
       if (process.env.NODE_ENV !== 'production') {
         responseData.codigo_otp_temporal = otpCode
-        responseData._desarrollo_nota = "El código OTP se incluye solo en desarrollo. En producción, obtenerlo del email."
+        responseData._desarrollo_nota =
+          'El código OTP se incluye solo en desarrollo. En producción, obtenerlo del email.'
       }
 
       return response.status(200).json({
         message: 'Código OTP generado exitosamente',
-        data: responseData
+        data: responseData,
       })
-
     } catch (error) {
       return response.status(500).json({
         message: 'Error al generar OTP',
-        error: error.message
+        error: error.message,
       })
     }
   }
@@ -271,10 +278,10 @@ export default class ValidacionVotoController {
   async validarOtp({ request, response }: HttpContext) {
     try {
       console.log('📥 Datos recibidos para validación OTP:', request.body())
-      
+
       const validator = vine.compile(
         vine.object({
-          codigo_otp: vine.string().minLength(6).maxLength(6)
+          codigo_otp: vine.string().minLength(6).maxLength(6),
         })
       )
 
@@ -289,7 +296,7 @@ export default class ValidacionVotoController {
       if (!validacionTemporal) {
         return response.status(200).json({
           success: false,
-          message: 'Código OTP, aprendiz o elección no coinciden'
+          message: 'Código OTP, aprendiz o elección no coinciden',
         })
       }
 
@@ -297,47 +304,48 @@ export default class ValidacionVotoController {
       const tiempoActual = DateTime.now()
       const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES || '5')
       const tiempoExpiracion = validacionTemporal.createdAt.plus({ minutes: expirationMinutes })
-      
+
       if (tiempoActual > tiempoExpiracion) {
         // Eliminar OTP expirado
         await validacionTemporal.delete()
-        
+
         return response.status(200).json({
           success: false,
-          message: 'El código OTP ya expiró. Solicita uno nuevo.'
+          message: 'El código OTP ya expiró. Solicita uno nuevo.',
         })
       }
 
       // 3. Marcar el OTP como usado (cambiar prefijo)
-      await validacionTemporal.merge({
-        codigo: `USED_${data.codigo_otp}` // Marcar como usado
-      }).save()
+      await validacionTemporal
+        .merge({
+          codigo: `USED_${data.codigo_otp}`, // Marcar como usado
+        })
+        .save()
 
       return response.status(200).json({
         success: true,
         message: 'Código OTP validado correctamente',
         data: {
           aprendiz_id: validacionTemporal.aprendiz_idaprendiz,
-          eleccion_id: validacionTemporal.elecciones_ideleccion
-        }
+          eleccion_id: validacionTemporal.elecciones_ideleccion,
+        },
       })
-
     } catch (error) {
       console.error('❌ Error en validación OTP:', error)
-      
+
       // Si es error de validación, devolver detalles específicos
       if (error.messages) {
         return response.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
-          errors: error.messages
+          errors: error.messages,
         })
       }
-      
+
       return response.status(500).json({
         success: false,
         message: 'Error al validar el código OTP',
-        error: error.message
+        error: error.message,
       })
     }
   }
