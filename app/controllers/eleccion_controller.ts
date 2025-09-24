@@ -179,10 +179,21 @@ export default class EleccionControler {
 
                     
     if (
+        // Caso 1: hoy está entre fechaInicio y fechaFin (excluyendo extremos)
         (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
-        (soloFechaHoy === soloFechaInicio && minutosAhora >= minutosInicio) ||
-        (soloFechaHoy === soloFechaFin && minutosAhora <= minutosFin)         
-        ) {
+
+        // Caso 2: hoy es el mismo día de inicio y de fin (rango en un día)
+        (soloFechaHoy === soloFechaInicio && soloFechaHoy === soloFechaFin &&
+          minutosAhora >= minutosInicio && minutosAhora <= minutosFin) ||
+
+        // Caso 3: hoy es solo el día de inicio (y ya pasó la hora de inicio)
+        (soloFechaHoy === soloFechaInicio && soloFechaHoy < soloFechaFin &&
+          minutosAhora >= minutosInicio) ||
+
+        // Caso 4: hoy es solo el día de fin (y aún no pasa la hora de fin)
+        (soloFechaHoy === soloFechaFin && soloFechaHoy > soloFechaInicio &&
+          minutosAhora <= minutosFin)
+      ) {
           //const primerCandidato = eleccion.candidato[0]
 
           eleccionesActivas.push({
@@ -191,7 +202,9 @@ export default class EleccionControler {
             fechaInicio: eleccion.fecha_inicio,
             fechaFin: eleccion.fecha_fin,
             centro: eleccion.centro.centro_formacioncol,
-            jornada: eleccion.jornada
+            jornada: eleccion.jornada,
+            horaInicio: eleccion.hora_inicio,
+            horaFin:eleccion.hora_fin
             //jornada: primerCandidato?.aprendiz?.grupo?.jornada ?? null,
           })
         }
