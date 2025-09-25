@@ -1,9 +1,12 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import CentroFormacion from '#models/centro_formacion'
+import Regional from '#models/regionale'
+import Municipio from '#models/municipio'
 
 export default class CentroFormacionController {
   
-  async index({ response }: HttpContext) {
+
+  async obtiene({ response }: HttpContext) {
     try {
       const centro = await CentroFormacion.all()
       return response.status(200).json({
@@ -19,7 +22,8 @@ export default class CentroFormacionController {
     }
   }
 
-  async store({ request, response }: HttpContext) {
+  // Crear nuevo centro de formación
+  async crear({ request, response }: HttpContext) {
     try {
       const {
         idregional,
@@ -32,6 +36,25 @@ export default class CentroFormacionController {
         correosubdirector,
       } = request.body()
 
+      // Validar existencia de idregional
+      const regional = await Regional.find(idregional)
+      if (!regional) {
+        return response.status(400).json({
+          success: false,
+          message: 'El idregional proporcionado no existe',
+        })
+      }
+
+      // Validar existencia de idmunicipios
+      const municipio = await Municipio.find(idmunicipios)
+      if (!municipio) {
+        return response.status(400).json({
+          success: false,
+          message: 'El idmunicipios proporcionado no existe',
+        })
+      }
+
+      // Crear centro de formación (sin idcentro_formacion)
       const centro = await CentroFormacion.create({
         idregional,
         centro_formacioncol,
@@ -42,8 +65,6 @@ export default class CentroFormacionController {
         subdirector,
         correosubdirector,
       })
-
-      console.log(centro)
 
       return response.status(201).json({
         success: true,
@@ -59,7 +80,27 @@ export default class CentroFormacionController {
     }
   }
 
-  async update({ request, response, params }: HttpContext) {
+
+  async obtenerPorRegional ({params, response}:HttpContext){
+    try{
+      const {regional} = params;
+
+      const data = await CentroFormacion.query().where('idregional', regional)
+
+
+      return response.status(200).json({message:'Exito', data})
+
+    }catch(error){
+      return response.status(500).json({
+        success: false,
+        message: 'Error al obtener el centro de formacion por regional',
+        error: error.message,
+      })
+    }
+  }
+
+  // Actualizar centro de formación existente
+  async actualiza({ request, response, params }: HttpContext) {
     try {
       const centroId = params.id
       const centro = await CentroFormacion.find(centroId)
@@ -82,9 +123,32 @@ export default class CentroFormacionController {
         correosubdirector,
       } = request.body()
 
-      centro.idregional = idregional ?? centro.idregional
+      // Validar si se está actualizando idregional
+      if (idregional) {
+        const regional = await Regional.find(idregional)
+        if (!regional) {
+          return response.status(400).json({
+            success: false,
+            message: 'El idregional proporcionado no existe',
+          })
+        }
+        centro.idregional = idregional
+      }
+
+      // Validar si se está actualizando idmunicipios
+      if (idmunicipios) {
+        const municipio = await Municipio.find(idmunicipios)
+        if (!municipio) {
+          return response.status(400).json({
+            success: false,
+            message: 'El idmunicipios proporcionado no existe',
+          })
+        }
+        centro.idmunicipios = idmunicipios
+      }
+
+      // Actualizar el resto de campos si se proporcionan
       centro.centro_formacioncol = centro_formacioncol ?? centro.centro_formacioncol
-      centro.idmunicipios = idmunicipios ?? centro.idmunicipios
       centro.direccion = direccion ?? centro.direccion
       centro.telefono = telefono ?? centro.telefono
       centro.correo = correo ?? centro.correo

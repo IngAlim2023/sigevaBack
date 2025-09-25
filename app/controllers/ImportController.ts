@@ -1,5 +1,5 @@
 /* eslint-disable @unicorn/filename-case */
-// ImportExcelController.ts
+// ImportExcelController.ts (parcheado - devuelve processed por fila)
 import type { HttpContext } from '@adonisjs/core/http'
 import Aprendiz from '#models/aprendiz'
 import Perfil from '#models/perfil'
@@ -10,286 +10,363 @@ import db from '@adonisjs/lucid/services/db'
 import bcrypt from 'bcrypt'
 import XLSX from 'xlsx'
 
+import Usuario from '#models/usuario'
+
 export default class ImportExcelController {
-  // Método para importar aprendices
-  async importarAprendices({ request, response }: HttpContext) {
+  public async importarAprendices({ request, response }: HttpContext) {
     const trx = await db.transaction()
+
     try {
-      // Recibir archivo Excel y jornada desde frontend
+      // Inicializar contadores
+      let inserted = 0
+      let updated = 0
+      let skipped = 0
+      let skippedAprendices: any[] = []
+
+      // Nuevo: array con resultado procesado por fila (útil para frontend)
+      const processed: Array<{
+        'Número de Documento': string
+        'Correo Electrónico': string
+        'Nombre': string
+        'Apellidos': string
+        'status': 'inserted' | 'updated' | 'skipped'
+        'motivo'?: string
+      }> = []
+
+      // 1) Contexto: userId desde el frontend
+      const userId = Number(request.input('userId'))
+      if (!userId) {
+        await trx.rollback()
+        return response.badRequest({ success: false, message: 'Falta userId en el body' })
+      }
+
+      const usuario = await Usuario.find(userId)
+      if (!usuario) {
+        await trx.rollback()
+        return response.unauthorized({ success: false, message: 'Usuario inválido' })
+      }
+
+      // Perfiles permitidos
+      const perfilFuncionario = await Perfil.query()
+        .whereRaw('LOWER(perfil) = LOWER(?)', ['funcionario'])
+        .first()
+      const perfilAdministrador = await Perfil.query()
+        .whereRaw('LOWER(perfil) = LOWER(?)', ['administrador'])
+        .first()
+
+      if (!perfilFuncionario || !perfilAdministrador) {
+        await trx.rollback()
+        return response.status(500).json({
+          success: false,
+          message: 'Perfiles requeridos no configurados (Funcionario/Administrador)',
+        })
+      }
+
+      const esFuncionario = usuario.idperfil === perfilFuncionario.idperfil
+      const esAdministrador = usuario.idperfil === perfilAdministrador.idperfil
+
+      if (!esFuncionario && !esAdministrador) {
+        await trx.rollback()
+        return response.forbidden({
+          success: false,
+          message: 'Solo administradores o funcionarios pueden importar aprendices',
+        })
+      }
+
+      // Determinar centro según el rol
+      let centroFormacionId: number | null = null
+      if (esFuncionario) {
+        centroFormacionId = usuario.idcentro_formacion
+        if (!centroFormacionId) {
+          await trx.rollback()
+          return response.badRequest({
+            success: false,
+            message: 'El funcionario no tiene centro de formación asignado',
+          })
+        }
+      } else {
+        const bodyCentro = Number(request.input('centroFormacionId'))
+        if (!bodyCentro) {
+          await trx.rollback()
+          return response.badRequest({
+            success: false,
+            message: 'Debes enviar centroFormacionId en el body (administrador)',
+          })
+        }
+        centroFormacionId = bodyCentro
+      }
+
+      // Leer flag updateIfExists
+      const updateIfExistsRaw = request.input('updateIfExists')
+      const updateIfExists =
+        updateIfExistsRaw === undefined
+          ? true
+          : updateIfExistsRaw === '1' || updateIfExistsRaw === 1 || updateIfExistsRaw === true
+
+      // 2) Archivo y params
       const file = request.file('excel')
       const { jornada } = request.only(['jornada'])
 
       if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
+        await trx.rollback()
+        return response.status(400).json({
+          success: false,
+          message: 'Debes subir un archivo Excel',
+        })
       }
 
-      // Leer Excel
+      // 3) Leer Excel
       const workbook = XLSX.read(file.tmpPath, { type: 'file' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
 
-      // Buscar o crear perfil "Aprendiz"
-      let perfil = await Perfil.query({ client: trx }).where('perfil', 'Aprendiz').first()
-      if (!perfil) {
-        perfil = await Perfil.create({ perfil: 'Aprendiz' }, { client: trx })
+      const fichaCelda = sheet['C2']?.v?.toString().trim() || ''
+      const fichaLimpia = fichaCelda.replace(/–/g, '-')
+      const partes = fichaLimpia.split(' - ')
+      const numeroGrupo = partes[0]?.trim() || ''
+      const nombrePrograma = partes[1]?.trim() || ''
+
+      if (!numeroGrupo || !nombrePrograma) {
+        await trx.rollback()
+        return response.status(400).json({
+          success: false,
+          message: 'No se encontró la ficha de caracterización o el programa en el Excel',
+        })
       }
 
+      const data: any[] = XLSX.utils.sheet_to_json(sheet, { range: 4, defval: '' })
+
+      const normalizeDoc = (d: any) =>
+        d === null || d === undefined ? '' : String(d).trim().replace(/\s+/g, '')
+      const normalizeEmail = (e: any) =>
+        e === null || e === undefined ? '' : String(e).trim().toLowerCase()
+
+      // Recolectar documentos y correos
+      const docsSet = new Set<string>()
+      const emailsSet = new Set<string>()
+      const filasProcesables: any[] = []
+
       for (const fila of data) {
-        const {
-          'numero_documento': numeroDocumento,
-          'Nombre': nombres,
-          'Apellidos': apellidos,
-          'Celular': celular,
-          'Correo Electrónico': email,
-          'Estado': estado,
-          'ficha de caracterización': numeroGrupo,
-          'Programa': nombrePrograma,
-        } = fila
+        const numeroDocumento = normalizeDoc(fila['Número de Documento'])
+        const email = normalizeEmail(fila['Correo Electrónico'])
 
-        // Verificar si ya existe el aprendiz
-        const aprendizExist = await Aprendiz.query({ client: trx })
-          .where('email', email)
-          .orWhere('numero_documento', numeroDocumento)
-          .first()
-        if (aprendizExist) continue // saltar si ya existe
+        if (!numeroDocumento && !email) continue
 
-        // Buscar o crear grupo
-        let grupo = await Grupo.query({ client: trx }).where('grupo', numeroGrupo).first()
-        if (!grupo) {
-          grupo = await Grupo.create({ grupo: numeroGrupo, jornada }, { client: trx })
+        filasProcesables.push({ fila, numeroDocumento, email })
+        if (numeroDocumento) docsSet.add(numeroDocumento)
+        if (email) emailsSet.add(email)
+      }
+
+      if (filasProcesables.length === 0) {
+        await trx.commit()
+        return response.ok({
+          success: true,
+          message: 'No hay filas válidas',
+          inserted: 0,
+          updated: 0,
+          skipped: 0,
+          skippedAprendices: [],
+          processed: [],
+        })
+      }
+
+      // Perfil y nivel
+      const perfil = await Perfil.query().whereRaw('LOWER(perfil) = LOWER(?)', ['aprendiz']).first()
+      if (!perfil) throw new Error('El perfil "Aprendiz" no existe.')
+
+      let nivel = await NivelFormacion.query().where('nivel_formacion', 'Técnico').first()
+      if (!nivel) {
+        nivel = new NivelFormacion()
+        nivel.nivel_formacion = 'Técnico'
+        await nivel.useTransaction(trx).save()
+      }
+
+      const AREA_SOFTWARE_ID = 1
+
+      // Grupo
+      let grupo = await Grupo.query().where('grupo', numeroGrupo).first()
+      if (!grupo) {
+        grupo = new Grupo()
+        grupo.grupo = numeroGrupo
+        grupo.jornada = jornada
+        await grupo.useTransaction(trx).save()
+      }
+
+      // Programa
+      let programa = await ProgramaFormacion.query().where('programa', nombrePrograma).first()
+      if (!programa) {
+        programa = new ProgramaFormacion()
+        Object.assign(programa, {
+          programa: nombrePrograma,
+          idnivel_formacion: nivel.idnivel_formacion,
+          idarea_tematica: AREA_SOFTWARE_ID,
+          codigo_programa: 'N/A',
+          version: '1.0',
+          duracion: 0,
+        })
+        await programa.useTransaction(trx).save()
+      } else {
+        programa.merge({
+          idnivel_formacion: programa.idnivel_formacion || nivel.idnivel_formacion,
+          idarea_tematica: programa.idarea_tematica || AREA_SOFTWARE_ID,
+          codigo_programa: programa.codigo_programa || 'N/A',
+          version: programa.version || '1.0',
+          duracion: programa.duracion || 0,
+        })
+        await programa.useTransaction(trx).save()
+      }
+
+      // ----------------- FILTRO DE DUPLICADOS DENTRO DEL MISMO EXCEL -----------------
+      const seenDocs = new Set<string>()
+      const seenEmails = new Set<string>()
+      const filasUnicas: any[] = []
+
+      for (const item of filasProcesables) {
+        const { numeroDocumento, email, fila } = item
+        if (
+          (numeroDocumento && seenDocs.has(numeroDocumento)) ||
+          (email && seenEmails.has(email))
+        ) {
+          skipped++
+          const motivo = 'Duplicado en el Excel'
+          skippedAprendices.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': fila['Nombre'] || '',
+            'Apellidos': fila['Apellidos'] || '',
+            'motivo': motivo,
+          })
+          // También registrar en processed para trazabilidad
+          processed.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': fila['Nombre'] || '',
+            'Apellidos': fila['Apellidos'] || '',
+            'status': 'skipped',
+            motivo,
+          })
+          continue
         }
+        if (numeroDocumento) seenDocs.add(numeroDocumento)
+        if (email) seenEmails.add(email)
+        filasUnicas.push(item)
+      }
 
-        // Buscar o crear programa
-        let programa = await ProgramaFormacion.query({ client: trx })
-          .where('programa', nombrePrograma)
+      // ----------------- PROCESAR FILAS ÚNICAS -----------------
+      for (const item of filasUnicas) {
+        const { fila, numeroDocumento, email } = item
+        const tipoDocumento = fila['Tipo de Documento'] || ''
+        const nombres = fila['Nombre'] || ''
+        const apellidos = fila['Apellidos'] || ''
+        const celular = fila['Celular'] || ''
+        const estado = fila['Estado'] || 'activo'
+
+        // Buscar existente en la base
+        const existe = await Aprendiz.query()
+          .useTransaction(trx)
+          .where((q) => {
+            if (numeroDocumento) q.where('numero_documento', numeroDocumento)
+            if (email) q.orWhere('email', email)
+          })
           .first()
-        if (!programa) {
-          programa = await ProgramaFormacion.create(
-            {
-              programa: nombrePrograma,
-              // Puedes agregar otros campos como codigo_programa, version, duracion si los tienes
-            },
-            { client: trx }
-          )
-        }
 
-        // Crear contraseña temporal y hash
-        const passwordTemporal = Math.random().toString(36).slice(-8)
-        const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
-
-        // Crear aprendiz con grupo y programa asignados
-        await Aprendiz.create(
-          {
+        if (existe) {
+          if (updateIfExists) {
+            existe.merge({
+              nombres: nombres || existe.nombres,
+              apellidos: apellidos || existe.apellidos,
+              celular: celular || existe.celular,
+              estado: estado || existe.estado,
+              tipo_documento: tipoDocumento || existe.tipo_documento,
+              numero_documento: numeroDocumento || existe.numero_documento,
+              email: email || existe.email,
+              idgrupo: grupo.idgrupo || existe.idgrupo,
+              idprograma_formacion: programa.idprograma_formacion || existe.idprograma_formacion,
+              centro_formacion_idcentro_formacion:
+                centroFormacionId || existe.centro_formacion_idcentro_formacion,
+            })
+            await existe.useTransaction(trx).save()
+            updated++
+            // registrar en processed como updated
+            processed.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': nombres || '',
+              'Apellidos': apellidos || '',
+              'status': 'updated',
+              'motivo': 'Actualizado',
+            })
+            // NO empujamos a skippedAprendices: fue una actualización
+          } else {
+            // NO actualizar, cuenta como omitido
+            skipped++
+            const motivo = 'Ya está en la base de datos'
+            skippedAprendices.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': fila['Nombre'] || '',
+              'Apellidos': fila['Apellidos'] || '',
+              'motivo': motivo,
+            })
+            processed.push({
+              'Número de Documento': numeroDocumento || '',
+              'Correo Electrónico': email || '',
+              'Nombre': nombres || '',
+              'Apellidos': apellidos || '',
+              'status': 'skipped',
+              motivo,
+            })
+          }
+        } else {
+          // Insertar nuevo
+          const passwordTemporal =
+            numeroDocumento || email || Math.random().toString(36).slice(2, 10)
+          const hashedPassword = await bcrypt.hash(passwordTemporal, 10)
+          const aprendizNuevo: any = {
+            idgrupo: grupo.idgrupo,
+            idprograma_formacion: programa.idprograma_formacion,
             perfil_idperfil: perfil.idperfil,
-            numero_documento: numeroDocumento,
             nombres,
             apellidos,
             celular,
-            email,
             estado,
+            tipo_documento: tipoDocumento,
+            numero_documento: numeroDocumento,
+            email,
             password: hashedPassword,
-            idgrupo: grupo.idgrupo,
-            idprograma_formacion: programa.idprograma_formacion,
-          },
-          { client: trx }
-        )
+            centro_formacion_idcentro_formacion: centroFormacionId,
+          }
+          const model = new Aprendiz()
+          model.merge(aprendizNuevo)
+          await model.useTransaction(trx).save()
+          inserted++
+          processed.push({
+            'Número de Documento': numeroDocumento || '',
+            'Correo Electrónico': email || '',
+            'Nombre': nombres || '',
+            'Apellidos': apellidos || '',
+            'status': 'inserted',
+            'motivo': 'Insertado',
+          })
+        }
       }
 
       await trx.commit()
-      return response.ok({ message: 'Aprendices importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response.status(500).json({
-        message: 'Error al importar aprendices',
-        error: error.message,
+      return response.ok({
+        success: true,
+        message: 'Importación procesada',
+        inserted,
+        updated,
+        skipped,
+        skippedAprendices,
+        // Nuevo: resultados por fila para trazabilidad en frontend
+        processed,
       })
-    }
-  }
-
-  // Dentro de ImportExcelController
-
-  async importarProgramas({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { Programa, CodigoPrograma, Version, Duracion, IdNivelFormacion, IdAreaTematica } =
-          fila
-
-        // Verificar si ya existe el programa
-        let programa = await ProgramaFormacion.query({ client: trx })
-          .where('codigo_programa', CodigoPrograma)
-          .first()
-        if (programa) continue // saltar si ya existe
-
-        // Crear programa
-        await ProgramaFormacion.create(
-          {
-            programa: Programa,
-            codigo_programa: CodigoPrograma,
-            version: Version,
-            duracion: Duracion,
-            idnivel_formacion: IdNivelFormacion,
-            idarea_tematica: IdAreaTematica,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Programas de formación importados con éxito' })
-    } catch (error) {
+    } catch (error: any) {
       await trx.rollback()
-      console.error(error)
+      console.error('Error en importarAprendices:', error)
       return response
         .status(500)
-        .json({ message: 'Error al importar programas', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarGrupos({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { Grupo: nombreGrupo, Jornada } = fila
-
-        // Verificar si ya existe el grupo
-        let grupo = await Grupo.query({ client: trx }).where('grupo', nombreGrupo).first()
-        if (grupo) continue // saltar si ya existe
-
-        // Crear grupo
-        await Grupo.create(
-          {
-            grupo: nombreGrupo,
-            jornada: Jornada || null,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Grupos importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar grupos', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarNiveles({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { IdNivelFormacion, NivelFormacion: nombreNivel } = fila
-
-        // Verificar si ya existe el nivel
-        let nivel = await NivelFormacion.query({ client: trx })
-          .where('idnivel_formacion', IdNivelFormacion)
-          .first()
-        if (nivel) continue // saltar si ya existe
-
-        // Crear nivel de formación
-        await NivelFormacion.create(
-          {
-            idnivel_formacion: IdNivelFormacion,
-            nivel_formacion: nombreNivel,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Niveles de formación importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar niveles', error: error.message })
-    }
-  }
-  // Dentro de ImportExcelController.ts
-
-  async importarPerfiles({ request, response }: HttpContext) {
-    const trx = await db.transaction()
-    try {
-      // Recibir archivo Excel
-      const file = request.file('excel')
-      if (!file) {
-        return response.status(400).json({ message: 'Debes subir un archivo Excel' })
-      }
-
-      // Leer Excel
-      const workbook = XLSX.read(file.tmpPath, { type: 'file' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const data: any[] = XLSX.utils.sheet_to_json(sheet)
-
-      // Iterar filas
-      for (const fila of data) {
-        const { IdPerfil, Perfil: nombrePerfil } = fila
-
-        // Verificar si ya existe el perfil
-        let perfilExist = await Perfil.query({ client: trx }).where('idperfil', IdPerfil).first()
-        if (perfilExist) continue // saltar si ya existe
-
-        // Crear perfil
-        await Perfil.create(
-          {
-            idperfil: IdPerfil,
-            perfil: nombrePerfil,
-          },
-          { client: trx }
-        )
-      }
-
-      await trx.commit()
-      return response.ok({ message: 'Perfiles importados con éxito' })
-    } catch (error) {
-      await trx.rollback()
-      console.error(error)
-      return response
-        .status(500)
-        .json({ message: 'Error al importar perfiles', error: error.message })
+        .json({ success: false, message: 'Error al importar aprendices', error: error.message })
     }
   }
 }

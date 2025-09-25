@@ -1,5 +1,6 @@
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
-import type  { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { DateTime } from 'luxon'
 import Eleccione from './eleccione.js'
 import Aprendiz from './aprendiz.js'
 import Votoxcandidato from './votoxcandidato.js'
@@ -16,7 +17,7 @@ export default class Candidatos extends BaseModel {
   declare ideleccion: number
 
   @column()
-  declare idparendiz: number
+  declare idaprendiz: number
 
   @column()
   declare foto: string
@@ -25,29 +26,29 @@ export default class Candidatos extends BaseModel {
   declare propuesta: string
 
   @column()
-  declare numero_tarjeton: number
+  declare numero_tarjeton: string
 
   @column()
-    declare idEleccion: number
-  
-  @belongsTo(() => Eleccione, {
-  foreignKey: 'idEleccion',
-   })
-  
-   declare eleccion: BelongsTo<typeof Eleccione>
+  declare idEleccion: number
 
-   @column()
-    declare idaprendiz: number
-  
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+
+  @belongsTo(() => Eleccione, {
+    foreignKey: 'ideleccion',
+  })
+  declare eleccion: BelongsTo<typeof Eleccione>
+
   @belongsTo(() => Aprendiz, {
-  foreignKey: 'idaprendiz',
-   })
-  
-   declare aprendiz: BelongsTo<typeof Aprendiz>
+    foreignKey: 'idaprendiz',
+  })
+  declare aprendiz: BelongsTo<typeof Aprendiz>
 
   @hasMany(() => Votoxcandidato, {
-  foreignKey: 'idcandidatos',
+    foreignKey: 'idcandidatos',
   })
-  
   declare departamento: HasMany<typeof Votoxcandidato>
 }
