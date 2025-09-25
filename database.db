@@ -1,0 +1,172 @@
+-- Tabla Departamentos
+CREATE TABLE IF NOT EXISTS Departamentos (
+  iddepartamentos SERIAL PRIMARY KEY,
+  departamentos VARCHAR(90) NOT NULL
+);
+
+-- Tabla Regional
+CREATE TABLE IF NOT EXISTS Regional (
+  idregional SERIAL PRIMARY KEY,
+  regional VARCHAR(45) NOT NULL,
+  departamentos_iddepartamentos INT NOT NULL,
+  telefono VARCHAR(45),
+  direccion VARCHAR(150),
+  numero_centros INT NOT NULL,
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (departamentos_iddepartamentos) REFERENCES Departamentos(iddepartamentos) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla municipios
+CREATE TABLE IF NOT EXISTS municipios (
+  idmunicipios SERIAL PRIMARY KEY,
+  iddepartamentos INT NOT NULL,
+  municipios VARCHAR(45),
+  FOREIGN KEY (iddepartamentos) REFERENCES Departamentos(iddepartamentos) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla Centro_formacion
+CREATE TABLE IF NOT EXISTS Centro_formacion (
+  idcentro_formacion SERIAL PRIMARY KEY,
+  idregional INT NOT NULL,
+  centro_formacioncol TEXT NOT NULL,
+  idmunicipios INT NOT NULL,
+  direccion VARCHAR(150),
+  telefono VARCHAR(150),
+  correo VARCHAR(200),
+  subdirector VARCHAR(150),
+  correosubdirector VARCHAR(200),
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idregional) REFERENCES Regional(idregional) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (idmunicipios) REFERENCES municipios(idmunicipios) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla perfil
+CREATE TABLE IF NOT EXISTS perfil (
+  idperfil SERIAL PRIMARY KEY,
+  perfil VARCHAR(45)
+);
+
+-- Tabla usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+  idusuarios SERIAL PRIMARY KEY,
+  idperfil INT NOT NULL,
+  idcentro_formacion INT NOT NULL,
+  nombres VARCHAR(100) NOT NULL,
+  apellidos VARCHAR(100) NOT NULL,
+  celular VARCHAR(45),
+  tipo_documento VARCHAR(25) NOT NULL,
+  numero_documento VARCHAR(45) NOT NULL UNIQUE,
+  email VARCHAR(200),
+  password VARCHAR(200),
+  estado VARCHAR(45) DEFAULT 'activo',
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idperfil) REFERENCES perfil(idperfil) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (idcentro_formacion) REFERENCES Centro_formacion(idcentro_formacion) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla nivel_formacion
+CREATE TABLE IF NOT EXISTS nivel_formacion (
+  idnivel_formacion SERIAL PRIMARY KEY,
+  nivel_formacion VARCHAR(45) NOT NULL
+);
+
+-- Tabla Programa_formacion
+CREATE TABLE IF NOT EXISTS Programa_formacion (
+  idprograma_formacion SERIAL PRIMARY KEY,
+  idnivel_formacion INT NOT NULL,
+  idarea_tematica INT NOT NULL,
+  programa TEXT NOT NULL,
+  codigo_programa VARCHAR(45) NOT NULL,
+  version VARCHAR(45) NOT NULL,
+  duracion INT NOT NULL,
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idnivel_formacion) REFERENCES nivel_formacion(idnivel_formacion) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla grupos
+CREATE TABLE IF NOT EXISTS grupos (
+  idgrupo SERIAL PRIMARY KEY,
+  grupo VARCHAR(45) NOT NULL,
+  jornada VARCHAR(45)
+);
+
+-- Tabla Aprendiz
+CREATE TABLE IF NOT EXISTS Aprendiz (
+  idaprendiz SERIAL PRIMARY KEY,
+  idgrupo INT NOT NULL,
+  idprograma_formacion INT NOT NULL,
+  perfil_idperfil INT NOT NULL,
+  centro_formacion_idcentro_formacion INT NOT NULL,
+  nombres VARCHAR(100) NOT NULL,
+  apellidos VARCHAR(100) NOT NULL,
+  celular VARCHAR(45),
+  estado VARCHAR(45) NOT NULL,
+  tipo_documento VARCHAR(25) NOT NULL,
+  numero_documento VARCHAR(45) NOT NULL UNIQUE,
+  email VARCHAR(200) NOT NULL,
+  password VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idprograma_formacion) REFERENCES Programa_formacion(idprograma_formacion) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (idgrupo) REFERENCES grupos(idgrupo) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (perfil_idperfil) REFERENCES perfil(idperfil) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (centro_formacion_idcentro_formacion) REFERENCES Centro_formacion(idcentro_formacion) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla Elecciones
+CREATE TABLE IF NOT EXISTS Elecciones (
+  ideleccion SERIAL PRIMARY KEY,
+  idcentro_formacion INT NOT NULL,
+  fecha_inicio DATE,
+  fecha_fin DATE,
+  hora_inicio TIMESTAMP,
+  hora_fin TIMESTAMP,
+  jornada VARCHAR(45),
+  nombre VARCHAR(200),
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idcentro_formacion) REFERENCES Centro_formacion(idcentro_formacion) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla candidatos
+CREATE TABLE IF NOT EXISTS candidatos (
+  idcandidatos SERIAL PRIMARY KEY,
+  ideleccion INT NOT NULL,
+  idaprendiz INT NOT NULL,
+  numero_tarjeton VARCHAR(45),
+  propuesta TEXT,
+  foto VARCHAR(200),
+  nombres TEXT DEFAULT 'Candidato',
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (ideleccion) REFERENCES Elecciones(ideleccion) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (idaprendiz) REFERENCES Aprendiz(idaprendiz) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla votoxcandidato
+CREATE TABLE IF NOT EXISTS votoxcandidato (
+  idvotoxcandidato SERIAL PRIMARY KEY,
+  idcandidatos INT NOT NULL,
+  idaprendiz INT NOT NULL,
+  contador INT,
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (idcandidatos) REFERENCES candidatos(idcandidatos) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (idaprendiz) REFERENCES Aprendiz(idaprendiz) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+-- Tabla validacionvoto
+CREATE TABLE IF NOT EXISTS validacionvoto (
+  id SERIAL PRIMARY KEY,
+  codigo VARCHAR(45),
+  aprendiz_idaprendiz INT NOT NULL,
+  elecciones_ideleccion INT NOT NULL,
+  created_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NULL,
+  FOREIGN KEY (aprendiz_idaprendiz) REFERENCES Aprendiz(idaprendiz) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (elecciones_ideleccion) REFERENCES Elecciones(ideleccion) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
