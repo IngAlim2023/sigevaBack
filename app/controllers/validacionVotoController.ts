@@ -116,33 +116,64 @@ export default class ValidacionVotoController {
           codigo_error: 'ELECCION_NO_ENCONTRADA',
         })
       }
+     
+
 
       // 3. Verificar fechas de la elección
-      const fechaActual = new Date()
-      const fechaInicio = new Date(eleccion.fecha_inicio)
-      const fechaFin = new Date(eleccion.fecha_fin)
+    // --- Preparación de datos ---
+    const hoy = DateTime.now().setZone("America/Bogota")
+    const soloFechaHoy = hoy.toISODate() ?? ""
 
-      if (fechaActual < fechaInicio) {
-        return response.status(400).json({
-          message: 'La elección aún no ha comenzado',
-          codigo_error: 'ELECCION_NO_INICIADA',
-          detalles: {
-            fecha_inicio: eleccion.fecha_inicio,
-            fecha_actual: fechaActual.toISOString().split('T')[0],
-          },
-        })
-      }
+    const fechaInicio = new Date(eleccion.fecha_inicio)
+    const fechaFin = new Date(eleccion.fecha_fin)
+    const soloFechaInicio = fechaInicio.toISOString().split("T")[0]
+    const soloFechaFin = fechaFin.toISOString().split("T")[0]
 
-      if (fechaActual > fechaFin) {
-        return response.status(400).json({
-          message: 'La elección ya ha finalizado',
-          codigo_error: 'ELECCION_FINALIZADA',
-          detalles: {
-            fecha_fin: eleccion.fecha_fin,
-            fecha_actual: fechaActual.toISOString().split('T')[0],
-          },
-        })
-      }
+    const horaInicioDate = new Date(eleccion.hora_inicio as any)
+    const horaFinDate = new Date(eleccion.hora_fin as any)
+
+    const minutosInicio = horaInicioDate.getHours() * 60 + horaInicioDate.getMinutes()
+    const minutosFin = horaFinDate.getHours() * 60 + horaFinDate.getMinutes()
+    const minutosAhora = hoy.hour * 60 + hoy.minute
+
+    // --- Validación ---
+    const esValida =
+      // Caso 1: hoy está entre fechaInicio y fechaFin (días intermedios)
+      (soloFechaHoy > soloFechaInicio && soloFechaHoy < soloFechaFin) ||
+
+      // Caso 2: rango dentro del mismo día
+      (soloFechaHoy === soloFechaInicio &&
+        soloFechaHoy === soloFechaFin &&
+        minutosAhora >= minutosInicio &&
+        minutosAhora <= minutosFin) ||
+
+      // Caso 3: día de inicio (y ya pasó hora de inicio)
+      (soloFechaHoy === soloFechaInicio &&
+        soloFechaHoy < soloFechaFin &&
+        minutosAhora >= minutosInicio) ||
+
+      // Caso 4: día de fin (y aún no pasa hora de fin)
+      (soloFechaHoy === soloFechaFin &&
+        soloFechaHoy > soloFechaInicio &&
+        minutosAhora <= minutosFin)
+
+    console.log("✅ ¿Es válida la elección?:", esValida)
+
+    if (!esValida) {
+      return response.status(400).json({
+        message: "La elección no está activa por fechas/horas",
+        codigo_error: "ELECCION_NO_VALIDA_POR_FECHAS",
+        detalles: {
+          fecha_inicio: eleccion.fecha_inicio,
+          fecha_fin: eleccion.fecha_fin,
+          hora_inicio: eleccion.hora_inicio,
+          hora_fin: eleccion.hora_fin,
+          fecha_actual: hoy.toISODate(),
+        },
+      })
+    }
+
+
 
       // 4. Verificar que pertenecen al mismo centro de formación
       if (aprendiz.centro_formacion_idcentro_formacion !== eleccion.idcentro_formacion) {
